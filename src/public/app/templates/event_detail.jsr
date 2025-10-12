@@ -1,0 +1,238 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="mb-0">{{:title}}</h5>
+  {{if event}}
+    <div class="d-flex gap-2">
+
+      <!-- Add gift (topp-knapp) -->
+      <button
+        class="btn btn-primary"
+        data-modal="open"
+        data-modal-template="modals/modal_gift_form"
+        data-modal-title="Add gift"
+        data-modal-submit-label="Create gift"
+        data-modal-action="/api/gifts"
+        data-modal-method="POST"
+        data-modal-preset='{
+          "gift": { "title": "", "status": "idea", "planned_price": "", "purchase_price": "", "notes": "" },
+          "direction": "outgoing"
+        }'
+        data-modal-sources='[
+          {"key":"event","url":"/api/events/{event_id}"},
+          {"key":"members","url":"/api/users"}
+        ]'
+        data-emit-entity="gift"
+        data-emit-id-path="data.gift_id"
+        data-event-id="{{:event.id}}"
+      >
+        Add gift
+      </button>
+
+      <button
+        class="btn btn-outline-secondary"
+        data-modal="open"
+        data-modal-template="modals/modal_event_form"
+        data-modal-title="Edit event"
+        data-modal-submit-label="Save"
+        data-modal-action="/api/events/{id}"
+        data-modal-method="PATCH"
+        data-modal-sources='[
+          {"key":"event","url":"/api/events/{id}"},
+          {"key":"members","url":"/api/users"}
+        ]'
+        data-emit-entity="event"
+        data-id="{{:event.id}}"
+      >
+        Edit event
+      </button>
+
+      <a class="btn btn-light" href="/app/events">Back to events</a>
+    </div>
+  {{/if}}
+</div>
+
+{{if !event}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading…</div>
+  </div>
+{{else}}
+
+  <ul class="nav nav-tabs" id="giftTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {{if activeTab !== 'received'}}active{{/if}}" id="tabGive"
+              data-bs-toggle="tab" data-bs-target="#paneGive" type="button" role="tab"
+              aria-controls="paneGive" aria-selected="{{if activeTab !== 'received'}}true{{else}}false{{/if}}">
+        Gifts we give
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {{if activeTab === 'received'}}active{{/if}}" id="tabReceived"
+              data-bs-toggle="tab" data-bs-target="#paneReceived" type="button" role="tab"
+              aria-controls="paneReceived" aria-selected="{{if activeTab === 'received'}}true{{else}}false{{/if}}">
+        Gifts we received
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content pt-3">
+
+    <!-- We give -->
+    <div class="tab-pane fade {{if activeTab !== 'received'}}show active{{/if}}" id="paneGive" role="tabpanel" aria-labelledby="tabGive">
+      {{if giveGroups && giveGroups.length}}
+        <div class="vstack">
+          {{for giveGroups}}
+            <div class="py-3 border-top">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <h6 class="mb-0">{{:user.display_name || ((user.firstname || '') + ' ' + (user.lastname || '')) || (user.email || 'User')}}</h6>
+                <a
+                  href="#"
+                  class="small text-decoration-underline"
+                  data-modal="open"
+                  data-modal-template="modals/modal_gift_form"
+                  data-modal-title="Add gift"
+                  data-modal-submit-label="Create gift"
+                  data-modal-action="/api/gifts"
+                  data-modal-method="POST"
+                  data-modal-preset='{
+                    "gift": { "title": "", "status": "idea", "planned_price": "", "purchase_price": "", "notes": "" },
+                    "direction": "outgoing",
+                    "prefill_recipient_ids": ["{{:user.id}}"]
+                  }'
+                  data-modal-sources='[
+                    {"key":"event","url":"/api/events/{event_id}"},
+                    {"key":"members","url":"/api/users"}
+                  ]'
+                  data-emit-entity="gift"
+                  data-emit-id-path="data.gift_id"
+                  data-event-id="{{:~root.eventId}}"
+                >
+                  Add gift
+                </a>
+              </div>
+
+              {{if gifts && gifts.length}}
+                <div class="vstack gap-2">
+                  {{for gifts}}
+                    <div class="border rounded p-2 bg-white d-flex align-items-center justify-content-between">
+                      <div class="me-2">
+                        <div class="fw-semibold">{{:title || '—'}}</div>
+                        <div class="small text-muted">
+                          {{if planned_price}}Planned: {{:planned_price}}{{/if}}
+                          {{if purchase_price}} {{if planned_price}} · {{/if}}Bought: {{:purchase_price}}{{/if}}
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge {{:status_class}} text-capitalize">{{:status}}</span>
+                        <a
+                          href="#"
+                          class="btn btn-sm btn-outline-secondary"
+                          data-modal="open"
+                          data-modal-template="modals/modal_gift_form"
+                          data-modal-title="Edit gift"
+                          data-modal-submit-label="Save changes"
+                          data-modal-action="/api/gifts/{id}"
+                          data-modal-method="PATCH"
+                          data-modal-sources='[
+                            {"key":"gift","url":"/api/gifts/{id}"},
+                            {"key":"members","url":"/api/users"}
+                          ]'
+                          data-emit-entity="gift"
+                          data-id="{{:id}}"
+                          data-event-id="{{:event_id}}"
+                        >Edit</a>
+                        <button class="btn btn-sm btn-outline-danger" data-delete="gift" data-id="{{:id}}">Delete</button>
+                      </div>
+                    </div>
+                  {{/for}}
+                </div>
+              {{else}}
+                <div class="text-muted small">No gifts yet.</div>
+              {{/if}}
+            </div>
+          {{/for}}
+        </div>
+      {{else}}
+        <div class="text-muted">No gifts registered that we give (yet).</div>
+      {{/if}}
+    </div>
+
+    <!-- We received -->
+    <div class="tab-pane fade {{if activeTab === 'received'}}show active{{/if}}" id="paneReceived" role="tabpanel" aria-labelledby="tabReceived">
+      {{if receivedGroups && receivedGroups.length}}
+        <div class="vstack">
+          {{for receivedGroups}}
+            <div class="py-3 border-top">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <h6 class="mb-0">{{:user.display_name || ((user.firstname || '') + ' ' + (user.lastname || '')) || (user.email || 'User')}}</h6>
+                <a
+                  href="#"
+                  class="small text-decoration-underline"
+                  data-modal="open"
+                  data-modal-template="modals/modal_gift_form"
+                  data-modal-title="Add received gift"
+                  data-modal-submit-label="Create gift"
+                  data-modal-action="/api/gifts"
+                  data-modal-method="POST"
+                  data-modal-preset='{
+                    "gift": { "title": "", "status": "given", "planned_price": "", "purchase_price": "", "notes": "" },
+                    "direction": "incoming",
+                    "prefill_recipient_ids": ["{{:user.id}}"]
+                  }'
+                  data-modal-sources='[
+                    {"key":"event","url":"/api/events/{event_id}"},
+                    {"key":"members","url":"/api/users"}
+                  ]'
+                  data-emit-entity="gift"
+                  data-emit-id-path="data.gift_id"
+                  data-event-id="{{:~root.eventId}}"
+                >
+                  Add gift
+                </a>
+              </div>
+
+              {{if gifts && gifts.length}}
+                <div class="vstack gap-2">
+                  {{for gifts}}
+                    <div class="border rounded p-2 bg-white d-flex align-items-center justify-content-between">
+                      <div class="me-2">
+                        <div class="fw-semibold">{{:title || '—'}}</div>
+                        <div class="small text-muted">
+                          From: {{:givers_display}}
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-2">
+                        <a
+                          href="#"
+                          class="btn btn-sm btn-outline-secondary"
+                          data-modal="open"
+                          data-modal-template="modals/modal_gift_form"
+                          data-modal-title="Edit gift"
+                          data-modal-submit-label="Save changes"
+                          data-modal-action="/api/gifts/{id}"
+                          data-modal-method="PATCH"
+                          data-modal-sources='[
+                            {"key":"gift","url":"/api/gifts/{id}"},
+                            {"key":"members","url":"/api/users"}
+                          ]'
+                          data-emit-entity="gift"
+                          data-id="{{:id}}"
+                          data-event-id="{{:event_id}}"
+                        >Edit</a>
+                        <button class="btn btn-sm btn-outline-danger" data-delete="gift" data-id="{{:id}}">Delete</button>
+                      </div>
+                    </div>
+                  {{/for}}
+                </div>
+              {{else}}
+                <div class="text-muted small">—</div>
+              {{/if}}
+            </div>
+          {{/for}}
+        </div>
+      {{else}}
+        <div class="text-muted">No received gifts registered.</div>
+      {{/if}}
+    </div>
+
+  </div>
+{{/if}}

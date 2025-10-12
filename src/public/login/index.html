@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8"><title>Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    html,body{height:100%;margin:0}body{display:grid;place-items:center;font-family:system-ui,sans-serif}
+    .box{color:#444;text-align:center}.spinner{width:44px;height:44px;border:4px solid #ddd;border-top-color:#888;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #msg{margin-top:10px;font-size:.9rem;color:#666}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="spinner"></div>
+    <div>Forbereder innlogging…</div>
+    <div id="msg"></div>
+  </div>
+
+<script>
+(async () => {
+  const msg = t => document.getElementById('msg').textContent = t;
+
+  // 0) Ta vare på return-param første gang vi lander her
+  try {
+    const qp0 = new URLSearchParams(location.search);
+    const ret = qp0.get('return');
+    if (ret) sessionStorage.setItem('returnTo', ret);
+  } catch {}
+
+  // 1) Hent config (leser .env via backend)
+  let cfg;
+  try {
+    const r = await fetch('/api/public/config');
+    const j = await r.json();
+    if (j?.status !== 'success') throw new Error('config failed');
+    cfg = j.data || {};
+  } catch (e) {
+    console.error(e);
+    msg('Kunne ikke hente konfigurasjon.');
+    return;
+  }
+
+  const KC_BASE = (cfg.keycloak_base || '').replace(/\/+$/, '');
+  const CLIENT_ID = cfg.client_id;
+  const REDIRECT_URI = cfg.redirect_uri;
+
+  if (!KC_BASE || !CLIENT_ID || !REDIRECT_URI) {
+    console.error({ KC_BASE, CLIENT_ID, REDIRECT_URI });
+    msg('Ufullstendig konfigurasjon. Kontakt administrator.');
+    return;
+  }
+
+  // 2) Sørg for eksakt redirect_uri
+  const current = location.origin + location.pathname;
+  const expected = new URL(REDIRECT_URI).origin + new URL(REDIRECT_URI).pathname;
+  if (current !== expected) {
+    const q = location.search || '';
+    msg('Justerer adresse…');
+    location.replace(REDIRECT_URI + q);
+    return;
+  }
+
+  // 3) Bygg auth-URL
+  const authUrl = new URL(KC_BASE + '/protocol/openid-connect/auth');
+  authUrl.search = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'code',
+    scope: 'openid email profile'
+  }).toString();
+
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code');
+
+  // 4) Ingen code → send til Keycloak
+  if (!code) {
+    sessionStorage.removeItem('relogin_once');
+    msg('Sender deg til innlogging…');
+    location.replace(authUrl.toString());
+    return;
+  }
+
+  // 5) Bytt code → tokens
+  try {
+    msg('Bytter code til token…');
+    const r = await fetch('/api/auth/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ code })
+    });
+    const data = await r.json().catch(() => null);
+    const tokens = data?.data?.tokens || data?.tokens;
+
+    if (!r.ok || !tokens?.access_token) {
+      const backendMsg = (data?.message || '').toLowerCase();
+      const once = sessionStorage.getItem('relogin_once') === '1';
+      const maybeUsed = backendMsg.includes('invalid_grant') || backendMsg.includes('code not valid');
+
+      if (r.status === 400 && !once && (maybeUsed || true)) {
+        try { history.replaceState(null, '', REDIRECT_URI); } catch {}
+        sessionStorage.setItem('relogin_once', '1');
+        msg('Sesjonen var utløpt. Logger inn på nytt…');
+        location.replace(authUrl.toString());
+        return;
+      }
+
+      console.error('Token exchange failed', r.status, data);
+      msg(data?.message || 'Innlogging feilet. Prøv igjen.');
+      return;
+    }
+
+    // 6) Lagre tokens (inkl. id_token for logout)
+    localStorage.setItem('access_token', tokens.access_token);
+    if (tokens.refresh_token)  localStorage.setItem('refresh_token', tokens.refresh_token);
+    if (tokens.id_token)       localStorage.setItem('id_token', tokens.id_token);
+
+    // 7) Fjern ?code for å unngå rebruk ved refresh og gå tilbake til ruten
+    try { history.replaceState(null, '', REDIRECT_URI); } catch {}
+
+    const ret = sessionStorage.getItem('returnTo');
+    sessionStorage.removeItem('returnTo');
+    sessionStorage.removeItem('relogin_once');
+    msg('Innlogging OK. Åpner app…');
+    location.replace(ret || '/app/');
+  } catch (e) {
+    console.error(e);
+    msg('Uventet feil under innlogging.');
+  }
+})();
+</script>
+</body>
+</html>

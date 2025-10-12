@@ -1,0 +1,66 @@
+<div class="modal-header">
+  <h5 class="modal-title">{{:title}}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <form id="giftForm"
+        action="{{if gift && gift.id}}/api/gifts/{{:gift.id}}{{else}}/api/gifts{{/if}}"
+        data-method="{{if gift && gift.id}}PATCH{{else}}POST{{/if}}"
+        data-send="json">
+
+    <!-- Event id -->
+    <input type="hidden" name="event_id" value="{{:~root.event?.id || ~root.eventId || ''}}">
+
+    <!-- Product (Tom Select creatable) -->
+    <div class="mb-3">
+      <label class="form-label">Product</label>
+      <select id="giftProduct" name="product_id" class="form-select" data-tomselect="product-single"></select>
+      <input type="hidden" name="product_name" id="giftProductName">
+      <div class="form-text">Type to search or create a new product.</div>
+    </div>
+
+    {{if !gift.id}}
+      <div class="mb-3">
+        <label class="form-label">From (givers)</label>
+        <select name="giver_user_ids[]" multiple class="form-select" data-tomselect="users-multi"></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">To (recipients)</label>
+        <select name="recipient_user_ids[]" multiple class="form-select" data-tomselect="users-multi"></select>
+      </div>
+    {{/if}}
+
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="idea" {{if gift.status==='idea'}}selected{{/if}}>Planned</option>
+          <option value="reserved" {{if gift.status==='reserved'}}selected{{/if}}>Reserved</option>
+          <option value="purchased" {{if gift.status==='purchased'}}selected{{/if}}>Purchased</option>
+          <option value="given" {{if gift.status==='given'}}selected{{/if}}>Given</option>
+          <option value="cancelled" {{if gift.status==='cancelled'}}selected{{/if}}>Cancelled</option>
+        </select>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Planned price</label>
+        <input name="planned_price" type="number" step="0.01" class="form-control" value="{{:gift.planned_price}}">
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Purchase price</label>
+        <input name="purchase_price" type="number" step="0.01" class="form-control" value="{{:gift.purchase_price}}">
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="form-control" rows="3">{{:gift.notes}}</textarea>
+    </div>
+
+    <div class="error-message d-none"></div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="submit" form="giftForm" class="btn btn-primary">{{:submitLabel}}</button>
+</div>

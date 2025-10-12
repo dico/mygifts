@@ -1,0 +1,36 @@
+# Sikkerhet og ryddighet
+Options -Indexes
+DirectoryIndex index.html
+
+# Sørg for at Authorization-header er tilgjengelig for PHP
+RewriteEngine On
+RewriteBase /
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# 1) La eksisterende filer/mapper passere uten omskriving
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 2) API: alt under /api -> api.php
+RewriteRule ^api(/.*)?$ /api/api.php [QSA,L]
+
+# 3) Login SPA
+RewriteRule ^login/?$ /login/index.html [QSA,L]
+RewriteRule ^login/.*$ /login/index.html [QSA,L]
+
+# 4) Logout SPA
+RewriteRule ^logout/?$ /logout/index.html [QSA,L]
+
+# 5) **VIKTIG**: Ikke rør statiske filer i app/
+# Disse må serveres som ekte .js/.css/.png osv.
+RewriteRule ^app/assets/ - [L]
+RewriteRule ^app/templates/ - [L]
+RewriteRule ^app/lib/ - [L]
+
+# 6) App SPA fallback
+RewriteRule ^app/?$ /app/index.html [QSA,L]
+RewriteRule ^app/.*$ /app/index.html [QSA,L]
+
+# 7) Rot (/) -> index.html i public/
+RewriteRule ^$ /index.html [QSA,L]

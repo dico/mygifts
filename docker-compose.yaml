@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  mygifts:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    ports:
+      - "8322:80"
+
+    environment:
+      TZ: Europe/Oslo
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://localhost:8322}
+
+      DB_DRIVER: ${DB_DRIVER:-mysql}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_REDIRECT_URI: ${KEYCLOAK_REDIRECT_URI:-http://localhost:8322/login/}
+
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-64M}
+
+    volumes:
+      - type: bind
+        source: ./src
+        target: /var/www/html
+      - vendor:/var/www/html/vendor
+      - uploads:/var/www/html/public/upload
+      - data:/var/www/html/public/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+    command: >
+      bash -lc "
+        composer install --no-interaction --prefer-dist --no-dev &&
+        composer dump-autoload -o &&
+        apache2-foreground
+      "
+
+    restart: unless-stopped
+
+volumes:
+  vendor:
+  uploads:
+  data:

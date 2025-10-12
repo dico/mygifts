@@ -1,0 +1,98 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="mb-0">{{:title}}</h5>
+
+  <!-- New user via data-modal -->
+  <button
+    class="btn btn-primary"
+    data-modal="open"
+    data-modal-template="modals/modal_user_form"
+    data-modal-title="New user"
+    data-modal-submit-label="Create user"
+    data-modal-action="/api/users"
+    data-modal-method="POST"
+    data-modal-preset='{
+      "user": {
+        "firstname": "",
+        "lastname": "",
+        "email": "",
+        "mobile": "",
+        "is_family_member": 1,
+        "is_manager": 0,
+        "can_login": 0,
+        "is_active": 1
+      }
+    }'
+    data-emit-entity="user"
+    data-emit-id-path="data.user_id"
+  >
+    New user
+  </button>
+</div>
+<p class="text-muted mb-3">{{:intro}}</p>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading people…</div>
+  </div>
+{{else}}
+  {{if users && users.length}}
+    <table class="table table-sm mt-3 align-middle">
+      <tbody>
+        {{for users}}
+          <tr>
+            <td class="w-auto">
+              <!-- Optional avatar thumb if you later add it to list payload -->
+              {{if profile_image_url}}
+                <img src="{{:profile_image_url}}" class="rounded-circle me-2" width="32" height="32" style="object-fit:cover;" />
+              {{/if}}
+              {{:display_name}}
+            </td>
+            <td class="text-muted">{{:email}}</td>
+            <td class="text-end">
+              <!-- Change photo -->
+				<button
+				class="btn btn-outline-primary btn-sm me-1"
+				title="Change photo"
+				data-modal="open"
+				data-modal-template="modals/modal_user_avatar"
+				data-modal-title="Change photo"
+				data-modal-sources='[
+					{"key":"user","url":"/api/users/{id}"}
+				]'
+				data-emit-entity="user"
+				data-id="{{:id}}"
+				>
+				Change photo
+				</button>
+
+
+              <!-- Edit user via data-modal -->
+              <button
+                class="btn btn-outline-secondary btn-sm"
+                data-modal="open"
+                data-modal-template="modals/modal_user_form"
+                data-modal-title="Edit user"
+                data-modal-submit-label="Save changes"
+                data-modal-action="/api/users/{id}"
+                data-modal-method="PATCH"
+                data-modal-sources='[
+                  {"key":"user","url":"/api/users/{id}"}
+                ]'
+                data-emit-entity="user"
+                data-emit-id-path="data.user_id"
+                data-id="{{:id}}"
+              >
+                Edit
+              </button>
+            </td>
+          </tr>
+        {{/for}}
+      </tbody>
+    </table>
+  {{else}}
+    <div class="alert alert-light border mt-3" role="alert">
+      No users yet. Click <strong>New user</strong> to add someone.
+    </div>
+  {{/if}}
+{{/if}}

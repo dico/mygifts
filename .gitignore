@@ -1,0 +1,85 @@
+# -------------------------------
+# OS / Editor
+# -------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.log
+
+# -------------------------------
+# Composer / PHP
+# -------------------------------
+vendor/
+composer.lock
+composer.phar
+
+# Local environment and cache
+.env
+.phpunit.result.cache
+.cache/
+logs/
+*.cache
+
+# -------------------------------
+# Docker / Containers
+# -------------------------------
+# Build context leftovers
+docker-compose.override.yml
+.docker/tmp/
+.docker/cache/
+*.pid
+*.sock
+
+# Docker volumes (mounted)
+uploads/
+data/
+!public/upload/.gitkeep
+!public/data/.gitkeep
+
+# -------------------------------
+# Node / Frontend (JS / CSS)
+# -------------------------------
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+
+# Build artifacts (if any)
+dist/
+build/
+.tmp/
+public/app/assets/js/bundle.js
+public/app/assets/css/*.map
+
+# -------------------------------
+# Application specific
+# -------------------------------
+# Uploaded files
+/public/upload/
+/public/data/
+
+/src/backend/storage/
+src/backend/tmp/
+
+# Backup / dumps
+*.bak
+*.tar
+*.zip
+*.gz
+
+# -------------------------------
+# System files
+# -------------------------------
+# Apache / PHP logs
+error.log
+access.log
+
+# -------------------------------
+# Optional: Keep placeholder files
+# -------------------------------
+# If you want to track empty dirs, add `.gitkeep`
+!.gitkeep

@@ -1,0 +1,37 @@
+<div class="d-flex align-items-center mb-3">
+  <h5 class="mb-0">{{:title}}</h5>
+  <div class="ms-auto" style="max-width:260px">
+    <input id="prodSearch" class="form-control form-control-sm" placeholder="Search products…" value="{{:q||''}}">
+  </div>
+</div>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading products…</div>
+  </div>
+{{else}}
+  {{if products && products.length}}
+    <div class="row g-3">
+      {{for products}}
+        <div class="col-12 col-md-6 col-lg-4">
+          <a class="text-decoration-none" href="/app/products/{{:id}}">
+            <div class="card h-100 shadow-sm">
+              {{if image_url}}
+                <img src="{{:image_url}}" class="card-img-top" alt="">
+              {{/if}}
+              <div class="card-body">
+                <h6 class="card-title mb-1">{{:name}}</h6>
+                {{if description}}
+                  <div class="small text-muted">{{:description}}</div>
+                {{/if}}
+              </div>
+            </div>
+          </a>
+        </div>
+      {{/for}}
+    </div>
+  {{else}}
+    <div class="alert alert-light border">No products found.</div>
+  {{/if}}
+{{/if}}

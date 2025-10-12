@@ -1,0 +1,84 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="mb-0">{{:title}}</h5>
+
+  <!-- New event (modal) -->
+  <button
+    class="btn btn-primary"
+    data-modal="open"
+    data-modal-template="modals/modal_event_form"
+    data-modal-title="New event"
+    data-modal-submit-label="Create event"
+    data-modal-action="/api/events"
+    data-modal-method="POST"
+    data-modal-preset='{
+      "event": {
+        "name": "",
+        "event_date": "",
+        "event_type": "other",
+        "honoree_user_id": null,
+        "notes": ""
+      },
+      "isEdit": false
+    }'
+    data-modal-sources='[
+      {"key":"members","url":"/api/users"}
+    ]'
+    data-emit-entity="event"
+    data-emit-id-path="data.event_id"
+  >
+    New event
+  </button>
+</div>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading events…</div>
+  </div>
+{{else}}
+  {{if events && events.length}}
+    <div class="list-group">
+      {{for events}}
+        <div class="list-group-item d-flex align-items-center justify-content-between">
+          <div>
+            <div class="fw-semibold">
+              <a href="/app/events/{{:id}}" class="event-link">{{:name}}</a>
+            </div>
+            <div class="small text-muted">
+              {{if event_date}}{{:event_date}} · {{/if}}{{:event_type}}
+              {{if notes}}&middot; {{:notes}}{{/if}}
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <!-- Edit event (modal) -->
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              data-modal="open"
+              data-modal-template="modals/modal_event_form"
+              data-modal-title="Edit event"
+              data-modal-submit-label="Save changes"
+              data-modal-action="/api/events/{id}"
+              data-modal-method="PATCH"
+              data-modal-sources='[
+                {"key":"event","url":"/api/events/{id}"},
+                {"key":"members","url":"/api/users"}
+              ]'
+              data-emit-entity="event"
+              data-id="{{:id}}"
+            >
+              Edit
+            </button>
+
+            <button class="btn btn-outline-danger btn-sm" data-delete="event" data-id="{{:id}}">
+              Delete
+            </button>
+          </div>
+        </div>
+      {{/for}}
+    </div>
+  {{else}}
+    <div class="alert alert-light border mt-3" role="alert">
+      No events yet. Add your first above.
+    </div>
+  {{/if}}
+{{/if}}

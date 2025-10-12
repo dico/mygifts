@@ -1,0 +1,71 @@
+<!-- src/public/app/templates/modals/modal_user_form.jsr -->
+<div class="modal-header">
+  <h5 class="modal-title">{{:title}}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <form id="userForm"
+        action="{{if user && user.id}}/api/users/{{:user.id}}{{else}}/api/users{{/if}}"
+        data-method="{{if user && user.id}}PATCH{{else}}POST{{/if}}"
+        data-send="json">
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">First name</label>
+        <input name="firstname" type="text" class="form-control" value="{{:user.firstname}}" required>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Last name</label>
+        <input name="lastname" type="text" class="form-control" value="{{:user.lastname}}" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input name="email" type="email" class="form-control" value="{{:user.email}}">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Mobile</label>
+      <input name="mobile" type="text" class="form-control" value="{{:user.mobile}}">
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Family member</label>
+        <select name="is_family_member" class="form-select">
+          <option value="1" {{if user.is_family_member === 1 || user.is_family_member === true}}selected{{/if}}>Yes</option>
+          <option value="0" {{if !user.is_family_member}}selected{{/if}}>No</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Manager</label>
+        <select name="is_manager" class="form-select">
+          <option value="1" {{if user.is_manager === 1 || user.is_manager === true}}selected{{/if}}>Yes</option>
+          <option value="0" {{if !user.is_manager}}selected{{/if}}>No</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Can login</label>
+        <select name="can_login" class="form-select">
+          <option value="1" {{if user.can_login === 1 || user.can_login === true}}selected{{/if}}>Yes</option>
+          <option value="0" {{if !user.can_login}}selected{{/if}}>No</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Active</label>
+        <select name="is_active" class="form-select">
+          <option value="1" {{if user.is_active === 1 || user.is_active === true}}selected{{/if}}>Yes</option>
+          <option value="0" {{if !user.is_active}}selected{{/if}}>No</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="error-message d-none"></div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="submit" form="userForm" class="btn btn-primary">{{:submitLabel}}</button>
+</div>

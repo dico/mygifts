@@ -1,0 +1,28 @@
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-1">{{:title}}</h5>
+        <p class="text-muted mb-0">{{:intro}}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold">Upcoming events</div>
+      <div class="card-body">
+        <div class="text-muted">No events to show yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold">Recent activity</div>
+      <div class="card-body">
+        <div class="text-muted">Nothing here yet.</div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+<div class="mb-3 d-flex align-items-center justify-content-between">
+  <a href="/app/products" class="btn btn-sm btn-light">&larr; Back to Products</a>
+</div>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading product…</div>
+  </div>
+{{else}}
+  {{if product}}
+    <div class="card shadow-sm mb-3">
+      <div class="row g-0">
+        {{if product.image_url}}
+          <div class="col-md-3">
+            <img src="{{:product.image_url}}" alt="" class="img-fluid rounded-start">
+          </div>
+        {{/if}}
+        <div class="{{if product.image_url}}col-md-9{{else}}col-12{{/if}}">
+          <div class="card-body">
+            <h5 class="card-title mb-1">{{:product.name}}</h5>
+            {{if product.description}}
+              <p class="card-text text-muted mb-2">{{:product.description}}</p>
+            {{/if}}
+            <div class="small text-muted">
+              {{if product.url}}<a class="small" href="{{:product.url}}" target="_blank" rel="noopener">Product link ↗</a>{{/if}}
+              {{if product.default_price}} {{if product.url}} · {{/if}}Default: {{:product.default_price}} {{:product.currency_code||'NOK'}}{{/if}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h6 class="mb-2">Gift history</h6>
+    {{if items && items.length}}
+      <div class="vstack gap-2">
+        {{for items}}
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between">
+                <div class="me-3">
+                  <div class="fw-semibold">{{:title || product_name || '—'}}</div>
+                  <div class="small text-muted mt-1">
+                    Giver(s): {{:~names(givers)}} · Recipient(s): {{:~names(recipients)}}
+                    {{if given_at || purchased_at}} · When: {{:given_at || purchased_at}}{{/if}}
+                    {{if purchase_price || planned_price}} · Amount:
+                      {{:purchase_price || planned_price}} {{:currency_code || 'NOK'}}
+                    {{/if}}
+                  </div>
+                  {{if notes}}<div class="mt-2">{{:notes}}</div>{{/if}}
+                </div>
+                <span class="badge {{:~badge(status)}} text-capitalize">{{:status}}</span>
+              </div>
+            </div>
+          </div>
+        {{/for}}
+      </div>
+    {{else}}
+      <div class="alert alert-light border">No gifts recorded for this product yet.</div>
+    {{/if}}
+  {{else}}
+    <div class="alert alert-danger">Product not found.</div>
+  {{/if}}
+{{/if}}
+
+{{* ~names = function(arr){ return (arr||[]).map(x => x.display_name || '').filter(Boolean).join(', ') || '—'; } *}}
+{{* ~badge = function(s){
+  s = (s||'').toLowerCase();
+  const m = {idea:'text-bg-secondary',reserved:'text-bg-warning',purchased:'text-bg-primary',given:'text-bg-success',cancelled:'text-bg-dark'};
+  return m[s] || 'text-bg-secondary';
+} *}}
