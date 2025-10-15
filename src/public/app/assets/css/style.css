@@ -1,3 +1,4 @@
+/* src/public/app/assets/css/style.css */
 /* =========================================================
    Design tokens
    ======================================================= */
@@ -47,6 +48,14 @@ body{ background: var(--bg-page); }
   overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
 }
 .text-muted-2{ color: var(--text-muted); }
+
+/* Bootstrap-compat sr-only */
+.visually-hidden{
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden; clip: rect(1px,1px,1px,1px);
+  white-space: nowrap; border: 0; padding: 0; margin: -1px;
+}
 
 /* =========================================================
    Generic Section Header (person, kategori, osv.)
@@ -109,7 +118,29 @@ body{ background: var(--bg-page); }
 .ratio-1x1 > img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 
 /* =========================================================
-   Item row (standard rad for gave/produkt)
+   Thumbnail placeholder (stiplet) for manglende bilder
+   ======================================================= */
+.thumb-placeholder{
+  display:flex; align-items:center; justify-content:center;
+  width:100%; height:100%;
+  background:#f8f9fa;
+  border:1px dashed var(--bd-soft);
+  color:#adb5bd;
+  border-radius: var(--radius-md);
+  font-size:1rem;
+  transition: background .15s, color .15s;
+}
+
+/* Unngå dobbel ramme: skjul .thumb-border når placeholder finnes */
+.thumb:has(.thumb-placeholder){ border-color: transparent; }
+
+.thumb-btn:hover .thumb-placeholder{
+  background:#f1f3f5;
+  color:#868e96;
+}
+
+/* =========================================================
+   Item row (standard rad for gave/produkt/person)
    ======================================================= */
 .item-row {
   background: var(--bg-card);
@@ -122,7 +153,7 @@ body{ background: var(--bg-page); }
 .item-row__main{ flex:1 1 auto; min-width:0; }
 .item-row__meta{ font-size:.875rem; color: var(--text-muted); }
 
-/* ★ New price column: big, right-aligned, fixed min width */
+/* ★ Price-kolonne: stor, høyrejustert, fast min-bredde */
 .item-row__price{
   flex:0 0 auto;
   min-width: 90px;
@@ -139,13 +170,26 @@ body{ background: var(--bg-page); }
 .item-row--compact{ padding: .5rem .75rem; }
 .item-row + .item-row{ margin-top: .4rem; } /* tett mellom linjer */
 
-/* Person-variant: bruker avatar i stedet for kvadratisk thumb */
+/* Person-variant (avatar-størrelse justering) */
 .item-row--person .item-row__figure { flex:0 0 auto; }
 .item-row--person .avatar--sm { --avatar-size: 40px; }
 
-@media (max-width: 480px) {
-  /* litt strammere på små skjermer */
-  .item-row--person .item-row__actions { gap: .25rem; }
+
+/* ==== Overrides: mer luft mellom pris og knapper ==== */
+.item-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;              /* mer luft mellom pris og knapper */
+  flex-wrap: nowrap;      /* ikke bryt raden */
+}
+
+.item-row__price {
+  margin-right: 3rem;  /* pusterom mellom pris og knapper */
+}
+
+@media (max-width: 560px) {
+  .item-row__actions { gap: .75rem; }
+  .item-row__price { margin-right: .5rem; }
 }
 
 
@@ -201,7 +245,7 @@ body{ background: var(--bg-page); }
 }
 
 /* =========================================================
-   Toolbar (topp av sider/lister) – brukes der du allerede har 'toolbar'
+   Toolbar (topp av sider/lister)
    ======================================================= */
 .toolbar{
   display:flex; align-items:center; justify-content:space-between;
@@ -219,15 +263,10 @@ body{ background: var(--bg-page); }
 @keyframes sp { to { transform: rotate(360deg); } }
 .nav-link.active { font-weight: 600; }
 
-
-
 /* =========================================================
    TomSelect dropdown styling (bruker + produkt)
    ======================================================= */
-
-.ts-control {
-	border:0px;
-}
+.ts-control { border:0px; }
 
 .ts-thumb {
   width: 28px;
@@ -251,7 +290,6 @@ body{ background: var(--bg-page); }
   color: #868e96;
   font-size: 14px;
 }
-
 /* Felles layout for dropdown-opsjoner */
 .ts-dropdown .option,
 .ts-dropdown .item {
@@ -259,7 +297,6 @@ body{ background: var(--bg-page); }
   align-items: center;
   gap: .5rem;
 }
-
 /* Mini-avatar (brukere i søk / valgte) */
 .ts-avatar {
   width: 28px;
@@ -271,7 +308,6 @@ body{ background: var(--bg-page); }
   background: #f0f2f5;
   border: 1px solid rgba(0,0,0,.08);
 }
-
 /* Initialer fallback – samme størrelse som bilder */
 .ts-avatar--initials {
   display: inline-flex;
@@ -285,4 +321,155 @@ body{ background: var(--bg-page); }
   font: 600 12px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   text-transform: uppercase;
   border: 1px solid rgba(0,0,0,.08);
+}
+
+
+/* Gjør thumbs klikkbare på tvers av sider */
+.thumb-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.thumb-btn img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.thumb-btn:hover { filter: brightness(0.95); }
+
+/* =========================================================
+   Buttons (standard, på tvers av sider)
+   ======================================================= */
+
+/* Responsiv tekst på knapper med ikon + label */
+.btn .btn-label{ margin-left:.4rem; }
+@media (max-width:420px){ .btn .btn-label{ display:none; } }
+
+/* Ikonknapper – nøytral, rund, “app-look” */
+.btn-icon{
+  width:34px; height:34px;
+  border-radius:50%;
+  border:none;
+  background:#f1f3f5;
+  color:#495057;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition: background .15s, color .15s, transform .05s, box-shadow .15s;
+}
+.btn-icon:hover{ background:#e9ecef; color:#212529; }
+.btn-icon:active{ transform:scale(0.98); background:#dee2e6; }
+.btn-icon:focus-visible{ outline:2px solid #0d6efd; outline-offset:2px; }
+
+/* Destruktiv (diskret til hover) */
+.btn-icon--danger{ background:#f8f9fa; color:#c92a2a; }
+.btn-icon--danger:hover{ background:#ffe3e3; color:#a51111; }
+
+/* Ghost (helt nøytral – fint for “…”-meny) */
+.btn-icon--ghost{ background:transparent; color:#495057; }
+.btn-icon--ghost:hover{ background:#f1f3f5; color:#212529; }
+
+/* Liten variant (til kompakte lister) */
+.btn-icon--sm{ width:30px; height:30px; }
+
+
+/* Tittel som knapp – uten “button”-utseende */
+.btn-plain{
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  cursor: pointer;
+}
+.btn-plain:focus-visible{ outline:2px solid #0d6efd; outline-offset:2px; }
+
+/* Chevron-rotasjon basert på aria-expanded */
+.toggle-title .chev{ transition: transform .2s ease; }
+.toggle-title[aria-expanded="true"] .chev{ transform: rotate(180deg); }
+
+
+/* =========================================================
+   Item row – responsiv variant (kan brukes på tvers)
+   ======================================================= */
+
+/* Standard gridlayout – tre kolonner på store skjermer */
+.item-row--responsive{
+  display:grid;
+  grid-template-columns:auto 1fr auto;         /* figure | main | actions */
+  grid-template-areas:"figure main actions";
+  align-items:center;
+  gap: var(--gap-4);
+}
+
+.item-row--responsive .item-row__figure{ grid-area:figure; }
+.item-row--responsive .item-row__main{ grid-area:main; min-width:0; }
+.item-row--responsive .item-row__actions{
+  grid-area:actions;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;  /* alltid til høyre */
+  gap:.75rem;
+}
+
+/* === Pris-håndtering i actions === */
+.item-row__actions .item-row__price{
+  min-width:auto;       /* ikke tving bredde */
+  text-align:right;
+  margin-right:.75rem;  /* luft før ikonknapper */
+}
+.item-row__actions .item-row__price:empty{
+  display:none;         /* fjern helt hvis ingen pris */
+}
+
+/* === Responsiv oppførsel === */
+@media (max-width:600px){
+  /* grid legger actions under, men på høyre side */
+  .item-row--responsive{
+    grid-template-columns:auto 1fr;
+    grid-template-areas:
+      "figure main"
+      "actions actions";
+  }
+
+  .item-row--responsive .item-row__actions{
+    justify-self:end;          /* legg hele raden til høyre */
+    width:100%;
+    justify-content:flex-end;  /* knappene også høyrejustert */
+    gap:.6rem;
+    margin-top:.25rem;
+  }
+
+  .item-row__actions .item-row__price:empty{
+    display:none;
+  }
+}
+
+
+
+/* =========================================================
+   People page only (avatar-knapp + rekkefølge)
+   ======================================================= */
+.page-people .avatar-btn{
+  padding:0; border:0; background:transparent; line-height:0; border-radius:50%;
+}
+.page-people .avatar-btn:focus-visible{
+  outline:2px solid #0d6efd; outline-offset:2px;
+}
+.page-people .avatar-clickable{ cursor:pointer; }
+.page-people .avatar-clickable img{ display:block; }
+@media (hover:hover){ .page-people .avatar-clickable:hover{ filter:brightness(0.95); } }
+
+/* Bruk responsive layout for people-listen */
+.item-row--person{ /* alias: person = responsive med avatar-justering */
+  composes: item-row--responsive;
+}
+
+/* Badges under navnet – kompakt wrap */
+.item-row__tags{
+  display:flex; flex-wrap:wrap; gap:.35rem;
+  margin:.15rem 0 .25rem 0;
 }

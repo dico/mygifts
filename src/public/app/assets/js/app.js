@@ -5,6 +5,11 @@ import { initModalLinks } from './modalLinks.js';
 
 const qs = (s) => document.querySelector(s);
 
+function normalizePath(p) {
+  try { return new URL(p, window.location.origin).pathname.replace(/\/+$/, ''); }
+  catch { return String(p || '').replace(/\/+$/, ''); }
+}
+
 window.addEventListener('error', (e) => {
   console.error('[global error]', e.message, e.error || '');
 });
@@ -13,10 +18,10 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 function setActiveNav() {
-  const path = location.pathname;
+  const path = normalizePath(location.pathname);
   console.log('[nav] setActiveNav for path:', path);
   document.querySelectorAll('#spaNav .nav-link').forEach(a => {
-    const href = a.getAttribute('href');
+    const href = normalizePath(a.getAttribute('href'));
     const active = (path === href) || path.startsWith(href + '/');
     if (active) console.log('[nav] active link:', href);
     a.classList.toggle('active', active);
@@ -72,14 +77,14 @@ export async function initApp() {
     console.log('[router] startRouter()');
     startRouter();
 
-	// 🚀 Globale modal-lenker (produkt/bruker/event) – én gang
-  	initModalLinks();
+    // Global modals (product/user/event) – once
+    initModalLinks();
 
-    // Aktiv nav ved oppstart + ved historieendringer
+    // Active nav on startup + on history changes
     setActiveNav();
     window.addEventListener('popstate', setActiveNav);
 
-    // Intercept interne /app-lenker (SPA-nav)
+    // Intercept internal /app links (SPA-nav)
     document.addEventListener('click', (e) => {
       const a = e.target.closest('a.nav-link');
       if (!a) return;
@@ -95,8 +100,10 @@ export async function initApp() {
 
       e.preventDefault();
 
-      // Hvis samme path: re-render via refresh-event
-      if (location.pathname === href) {
+      const to = normalizePath(href);
+      const cur = normalizePath(location.pathname);
+
+      if (to === cur) {
         console.log('[nav] same path -> requestRouteRefresh()');
         requestRouteRefresh();
       } else {
@@ -104,13 +111,14 @@ export async function initApp() {
         window.page.show(href);
       }
 
+      // Let page.js update history, then re-highlight
       setTimeout(() => {
         console.log('[nav] post-navigation setActiveNav()');
         setActiveNav();
       }, 0);
     });
 
-    // Sikrere DnD: ikke dropp filer på siden globalt
+    // Safer DnD: don’t drop files globally
     window.addEventListener('dragover', (e) => e.preventDefault());
     window.addEventListener('drop', (e) => {
       if (!e.target.closest?.('[data-dropzone]')) e.preventDefault();

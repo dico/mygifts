@@ -9,9 +9,9 @@ async function fetchTemplate(name) {
   }
   const url = `/app/templates/${name}.jsr`;
   console.log('[view] fetching template:', url);
+
   let res;
   try {
-    // Liten cache-buster for å unngå sticky mellomlagring i noen proxies
     const bust = `_=${Date.now()}`;
     const link = url + (url.includes('?') ? '&' : '?') + bust;
     res = await fetch(link, { cache: 'no-cache' });
@@ -19,11 +19,13 @@ async function fetchTemplate(name) {
     console.error('[view] fetch failed for', url, e);
     throw new Error(`Network error while fetching template: ${name}`);
   }
+
   if (!res.ok) {
     const txt = await res.text().catch(() => '');
     console.error(`[view] HTTP ${res.status} for ${url}`, txt);
     throw new Error(`Failed to fetch template: ${name} (HTTP ${res.status})`);
   }
+
   const text = await res.text();
   cache.set(name, text);
   return text;
@@ -37,13 +39,12 @@ export async function render(name, data = {}) {
     </div>
   `;
   try {
-    const tpl = await fetchTemplate(name);
-
     if (!window.jsrender || !window.jsrender.templates) {
       console.error('[view] jsrender global not found');
       throw new Error('Template engine (jsrender) is not available');
     }
 
+    const tpl = await fetchTemplate(name);
     const tmpl = window.jsrender.templates(tpl);
     const html = tmpl.render(data);
     $app.innerHTML = html;
@@ -57,3 +58,6 @@ export async function render(name, data = {}) {
     `;
   }
 }
+
+// expose to page modules
+window.appView = { render };

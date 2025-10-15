@@ -14,8 +14,10 @@
     data-mm-sources='[{"key":"members","url":"/api/users"}]'
     data-mm-emit-entity="event"
     data-mm-emit-id-path="data.event_id"
+    type="button"
   >
-    New event
+    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+    <span class="btn-label">New event</span>
   </button>
 </div>
 
@@ -28,21 +30,29 @@
   {{if events && events.length}}
     <div class="stack-md">
       {{for events}}
-        <div class="item-row item-row--event">
+        <div class="item-row item-row--compact item-row--responsive">
+          <!-- Main -->
           <div class="item-row__main">
-            <div class="fw-semibold">
-              <a href="/app/events/{{:id}}" class="event-link text-decoration-none">{{:name}}</a>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <div class="fw-semibold text-truncate-1">
+                <a href="/app/events/{{:id}}" class="event-link text-decoration-none">{{:name}}</a>
+              </div>
             </div>
-            <div class="item-row__meta small text-muted">
-              {{if event_date}}{{:event_date}} · {{/if}}{{:event_type}}
-              {{if notes}} &middot; {{:notes}}{{/if}}
+
+            <div class="item-row__meta">
+              {{if event_date}}{{:event_date}}{{/if}}
+              {{if (event_date && notes)}} · {{/if}}
+              {{if notes}}{{:notes}}{{/if}}
             </div>
           </div>
 
-          <div class="item-row__actions d-flex gap-2">
+          <!-- Right: actions -->
+          <div class="item-row__actions">
             <!-- Edit event (ModalMini) -->
             <button
-              class="btn btn-outline-secondary btn-sm"
+              class="btn-icon"
+              title="Edit event"
+              aria-label="Edit event"
               data-mm="open"
               data-mm-template="modals/modal_event_form"
               data-mm-title="Edit event"
@@ -55,11 +65,23 @@
               ]'
               data-mm-emit-entity="event"
               data-id="{{:id}}"
+              type="button"
             >
-              Edit
+              <i class="fa-solid fa-pen" aria-hidden="true"></i>
+              <span class="visually-hidden">Edit</span>
             </button>
 
-            <button class="btn btn-outline-danger btn-sm" data-delete="event" data-id="{{:id}}">Delete</button>
+            <button
+              class="btn-icon btn-icon--danger"
+              title="Delete event"
+              aria-label="Delete event"
+              data-delete="event"
+              data-id="{{:id}}"
+              type="button"
+            >
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              <span class="visually-hidden">Delete</span>
+            </button>
           </div>
         </div>
       {{/for}}

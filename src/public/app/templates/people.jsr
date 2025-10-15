@@ -1,63 +1,90 @@
 <!-- src/public/app/templates/people.jsr -->
-<div class="toolbar">
-  <h5 class="mb-0">{{:title}}</h5>
+<div class="page-people">
+  <div class="toolbar">
+    <h5 class="mb-0">{{:title}}</h5>
 
-  <!-- New user (ModalMini) -->
-  <button
-    class="btn btn-primary"
-    data-mm="open"
-    data-mm-template="modals/modal_user_form"
-    data-mm-title="New user"
-    data-mm-submit-label="Create user"
-    data-mm-action="/api/users"
-    data-mm-method="POST"
-    data-mm-form-id="userForm"
-    data-mm-emit-entity="user"
-    data-mm-emit-id-path="data.user_id"
-    data-mm-preset='{
-      "user": {
-        "firstname": "",
-        "lastname": "",
-        "email": "",
-        "mobile": "",
-        "is_family_member": 0,
-        "is_manager": 0,
-        "can_login": 0
-      }
-    }'
-  >New user</button>
-</div>
-
-<p class="text-muted mb-3">{{:intro}}</p>
-
-{{if loading}}
-  <div class="text-center my-4">
-    <div class="spinner-border" role="status"></div>
-    <div class="text-muted mt-2">Loading people…</div>
+    <!-- New user (ModalMini) -->
+    <button
+      class="btn btn-primary"
+      data-mm="open"
+      data-mm-template="modals/modal_user_form"
+      data-mm-title="New user"
+      data-mm-submit-label="Create user"
+      data-mm-action="/api/users"
+      data-mm-method="POST"
+      data-mm-form-id="userForm"
+      data-mm-emit-entity="user"
+      data-mm-emit-id-path="data.user_id"
+      data-mm-preset='{
+        "user": {
+          "firstname": "",
+          "lastname": "",
+          "email": "",
+          "mobile": "",
+          "is_family_member": 0,
+          "is_manager": 0,
+          "can_login": 0
+        }
+      }'
+      type="button"
+    >
+      <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+      <span class="btn-label">New user</span>
+    </button>
   </div>
-{{else}}
-  {{if users && users.length}}
-    <div class="stack-md">
-      {{for users}}
-        <div class="item-row item-row--person">
-          <!-- Avatar -->
-          <div class="item-row__figure">
-            {{if profile_image_url}}
-              <span class="avatar avatar--sm"><img src="{{:profile_image_url}}" alt="{{:display_name}}"></span>
-            {{else}}
-              <span class="avatar avatar--sm" data-initials="{{:(display_name || 'U').slice(0,2)}}"></span>
-            {{/if}}
-          </div>
 
-          <!-- Main -->
-          <div class="item-row__main">
-            <div class="d-flex align-items-center gap-2">
+  <p class="text-muted mb-3">{{:intro}}</p>
+
+  {{if loading}}
+    <div class="text-center my-4">
+      <div class="spinner-border" role="status"></div>
+      <div class="text-muted mt-2">Loading people…</div>
+    </div>
+  {{else}}
+    {{if users && users.length}}
+      <div class="stack-md">
+        {{for users}}
+          <div class="item-row item-row--person">
+            <!-- Avatar (click to change) -->
+            <div class="item-row__figure">
+              <button
+                class="avatar-btn"
+                title="Change photo"
+                aria-label="Change photo for {{:display_name}}"
+                data-mm="open"
+                data-mm-template="modals/modal_user_avatar"
+                data-mm-title="Change photo"
+                data-mm-sources='[
+                  {"key":"user","url":"/api/users/{id}","path":"user"}
+                ]'
+                data-id="{{:id}}"
+                type="button"
+              >
+                {{if profile_image_url}}
+                  <span class="avatar avatar--sm avatar-clickable">
+                    <img
+                      src="{{:profile_image_url}}"
+                      alt="{{:display_name}}"
+                      loading="lazy"
+                      decoding="async"
+                      width="40"
+                      height="40"
+                    >
+                  </span>
+                {{else}}
+                  <span class="avatar avatar--sm avatar-clickable" data-initials="{{:(display_name || 'U').slice(0,2)}}"></span>
+                {{/if}}
+              </button>
+            </div>
+
+            <!-- Main -->
+            <div class="item-row__main">
               <div class="fw-semibold text-truncate-1">
-				<a href="#" data-link-user="{{:id}}">{{:display_name}}</a>
-				</div>
+                <a href="#" data-link-user="{{:id}}">{{:display_name}}</a>
+              </div>
 
-
-              <div class="d-inline-flex align-items-center gap-1 ms-1">
+              <!-- Tags always under name -->
+              <div class="item-row__tags">
                 {{if is_family_member}}
                   <span class="badge rounded-pill bg-info">Family</span>
                 {{else}}
@@ -67,59 +94,58 @@
                   <span class="badge rounded-pill bg-warning text-dark">Manager</span>
                 {{/if}}
               </div>
+
+              <div class="item-row__meta">
+                {{if email}}<span class="text-truncate-1">{{:email}}</span>{{/if}}
+                {{if (email && mobile)}} · {{/if}}
+                {{if mobile}}<span class="text-truncate-1">{{:mobile}}</span>{{/if}}
+              </div>
             </div>
 
-            <div class="item-row__meta">
-              {{if email}}<span class="text-truncate-1">{{:email}}</span>{{/if}}
-              {{if (email && mobile)}} · {{/if}}
-              {{if mobile}}<span class="text-truncate-1">{{:mobile}}</span>{{/if}}
+            <!-- Actions (ikonrunde, diskrete – iOS-aktig) -->
+            <div class="item-row__actions">
+              <!-- Edit user -->
+              <button
+                class="btn-icon"
+                title="Edit user"
+                aria-label="Edit user"
+                data-mm="open"
+                data-mm-template="modals/modal_user_form"
+                data-mm-title="Edit user"
+                data-mm-submit-label="Save changes"
+                data-mm-method="PATCH"
+                data-mm-sources='[
+                  {"key":"user","url":"/api/users/{id}","path":"user"}
+                ]'
+                data-mm-form-id="userForm"
+                data-mm-emit-entity="user"
+                data-id="{{:id}}"
+                type="button"
+              >
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                <span class="visually-hidden">Edit</span>
+              </button>
+
+              <!-- Delete user -->
+              <button
+                class="btn-icon btn-icon--danger"
+                title="Delete user"
+                aria-label="Delete user"
+                data-delete="user"
+                data-id="{{:id}}"
+                type="button"
+              >
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                <span class="visually-hidden">Delete</span>
+              </button>
             </div>
           </div>
-
-          <!-- Actions -->
-          <div class="item-row__actions">
-            <!-- Change photo (ModalMini) -->
-            <button
-              class="btn btn-outline-primary btn-sm"
-              title="Change photo"
-              data-mm="open"
-              data-mm-template="modals/modal_user_avatar"
-              data-mm-title="Change photo"
-              data-mm-sources='[
-                {"key":"user","url":"/api/users/{id}","path":"user"}
-              ]'
-              data-id="{{:id}}"
-            >Change photo</button>
-
-            <!-- Edit user (ModalMini) -->
-            <button
-              class="btn btn-outline-secondary btn-sm"
-              data-mm="open"
-              data-mm-template="modals/modal_user_form"
-              data-mm-title="Edit user"
-              data-mm-submit-label="Save changes"
-              data-mm-method="PATCH"
-              data-mm-sources='[
-                {"key":"user","url":"/api/users/{id}","path":"user"}
-              ]'
-              data-mm-form-id="userForm"
-              data-mm-emit-entity="user"
-              data-id="{{:id}}"
-            >Edit</button>
-
-            <!-- Delete user (from household) -->
-            <button
-              class="btn btn-outline-danger btn-sm"
-              data-delete="user"
-              data-id="{{:id}}"
-            >Delete</button>
-          </div>
-        </div>
-      {{/for}}
-    </div>
-  {{else}}
-    <div class="alert alert-light border mt-3" role="alert">
-      No users yet. Click <strong>New user</strong> to add someone.
-    </div>
+        {{/for}}
+      </div>
+    {{else}}
+      <div class="alert alert-light border mt-3" role="alert">
+        No users yet. Click <strong>New user</strong> to add someone.
+      </div>
+    {{/if}}
   {{/if}}
-{{/if}}
+</div>

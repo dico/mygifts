@@ -20,7 +20,7 @@
             <h3 class="section-title">{{:user.display_name}}</h3>
           </div>
 
-          <!-- Add wish (ModalMini) -->
+          <!-- Add wish -->
           <button
             class="btn btn-primary btn-sm"
             data-mm="open"
@@ -39,17 +39,42 @@
             }'
             data-mm-emit-entity="wishlist"
             data-mm-emit-id-path="data.wishlist_item_id"
-          >Add wish</button>
+            type="button"
+          >
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            <span class="btn-label">Add wish</span>
+          </button>
         </div>
 
         {{if items && items.length}}
           <div>
             {{for items}}
-              <div class="item-row">
-                <div class="thumb thumb--sm">
-                  {{if image_url}}<img src="{{:image_url}}" alt="{{:product_name}}">{{/if}}
+              <div class="item-row item-row--responsive">
+                <!-- Figure (clickable image) -->
+                <div class="item-row__figure">
+                  <button
+                    class="thumb thumb--sm thumb-btn"
+                    title="Change image"
+                    aria-label="Change image"
+                    data-mm="open"
+                    data-mm-template="modals/modal_product_image"
+                    data-mm-title="Upload image"
+                    data-mm-sources='[
+                      {"key":"product","url":"/api/products/{{:product_id}}"}
+                    ]'
+                    data-mm-emit-entity="product"
+                    data-id="{{:id}}"
+                    type="button"
+                  >
+                    {{if image_url}}
+                      <img src="{{:image_url}}" alt="{{:product_name}}">
+                    {{else}}
+                      <span class="text-muted small">No image</span>
+                    {{/if}}
+                  </button>
                 </div>
 
+                <!-- Main -->
                 <div class="item-row__main">
                   <div class="fw-semibold text-truncate-1">{{:product_name}}</div>
                   <div class="item-row__meta">
@@ -66,27 +91,18 @@
                   </div>
                 </div>
 
-                <div class="item-row__price">
-                  {{if price}}<span class="price">{{:price}}</span>{{/if}}
-                </div>
-
+                <!-- Actions (price + icons) -->
                 <div class="item-row__actions">
-                  {{if product_id}}
-                    <button
-                      class="btn btn-outline-primary btn-sm"
-                      data-mm="open"
-                      data-mm-template="modals/modal_product_image"
-                      data-mm-title="Upload image"
-                      data-mm-sources='[
-                        {"key":"product","url":"/api/products/{{:product_id}}"}
-                      ]'
-                      data-mm-emit-entity="product"
-                      data-id="{{:id}}"
-                    >Image</button>
+                  {{if price}}
+                    <div class="item-row__price">
+                      <span class="price">{{:price}}</span>
+                    </div>
                   {{/if}}
 
                   <button
-                    class="btn btn-outline-secondary btn-sm"
+                    class="btn-icon"
+                    title="Edit wish"
+                    aria-label="Edit wish"
                     data-mm="open"
                     data-mm-template="modals/modal_wishlist_item_form"
                     data-mm-title="Edit wish"
@@ -98,9 +114,23 @@
                     ]'
                     data-mm-emit-entity="wishlist"
                     data-id="{{:id}}"
-                  >Edit</button>
+                    type="button"
+                  >
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                    <span class="visually-hidden">Edit</span>
+                  </button>
 
-                  <button class="btn btn-outline-danger btn-sm" data-delete="wishlist" data-id="{{:id}}">Delete</button>
+                  <button
+                    class="btn-icon btn-icon--danger"
+                    title="Delete wish"
+                    aria-label="Delete wish"
+                    data-delete="wishlist"
+                    data-id="{{:id}}"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    <span class="visually-hidden">Delete</span>
+                  </button>
                 </div>
               </div>
             {{/for}}
