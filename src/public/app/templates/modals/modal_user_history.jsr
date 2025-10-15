@@ -1,0 +1,34 @@
+<!-- src/public/app/templates/modals/modal_user_history.jsr -->
+<div class="modal-header">
+  <h5 class="modal-title">Gifts received – {{:user.display_name}}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+  {{if rows && rows.length}}
+    <div class="list-group">
+      {{for rows}}
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <a href="#" data-link-product="{{:product.id}}" class="fw-semibold">
+              {{:title || product.name || '—'}}
+            </a>
+            <span class="badge text-capitalize {{if status==='given'}}text-bg-success{{else status==='purchased'}}text-bg-primary{{else status==='reserved'}}text-bg-warning{{else status==='idea'}}text-bg-secondary{{else}}text-bg-dark{{/if}}">{{:status}}</span>
+          </div>
+          <div class="small text-muted">
+            From:
+            {{if givers && givers.length}}
+              {{for givers}}
+                <a href="#" data-link-user="{{:id}}">{{:display_name}}</a>{{if #getIndex() < #get("array").length-1}}, {{/if}}
+              {{/for}}
+            {{else}}—{{/if}}
+            · Event: <a href="#" data-link-event="{{:event.id}}">{{:event.name || '—'}}</a>
+            {{if price}} · Value: {{:price}}{{/if}}
+          </div>
+          {{if notes}}<div class="mt-1">{{:notes}}</div>{{/if}}
+        </div>
+      {{/for}}
+    </div>
+  {{else}}
+    <div class="text-muted">No gifts found.</div>
+  {{/if}}
+</div>

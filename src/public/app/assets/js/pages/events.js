@@ -2,9 +2,11 @@
 import { render } from '../view.js';
 import { api } from '../Remote.js';
 import { on } from '../eventBus.js';
+import { registerModalMini } from '../modalMini.js';   // <- endret navn
 
 let offChanged = null;
 let unbindClicks = null;
+let unbindModals = null;
 
 function bindActions(rootEl) {
   const handler = async (e) => {
@@ -48,6 +50,11 @@ async function load() {
     const rootEl = document.getElementById('app');
     if (unbindClicks) { try { unbindClicks(); } catch {} }
     unbindClicks = bindActions(rootEl);
+
+    // (Re)bind generiske modaler på nytt DOM-tre
+    if (unbindModals) { try { unbindModals(); } catch {} }
+    unbindModals = registerModalMini(rootEl);   // <- endret funksjon
+
   } catch (err) {
     console.error('[events] load error', err);
     await render('events', {
@@ -61,8 +68,6 @@ async function load() {
 
 export async function mount() {
   await load();
-
-  // refresh when an event changes (created/updated)
   offChanged = on('entity:changed', (p) => {
     if (p?.entity === 'event') load();
   });
@@ -71,4 +76,5 @@ export async function mount() {
 export function unmount() {
   offChanged?.(); offChanged = null;
   unbindClicks?.(); unbindClicks = null;
+  unbindModals?.(); unbindModals = null;
 }

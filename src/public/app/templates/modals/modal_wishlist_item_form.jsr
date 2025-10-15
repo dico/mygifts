@@ -1,0 +1,87 @@
+<!-- src/public/app/templates/modals/modal_wishlist_item_form.jsr -->
+<div class="modal-header">
+  <h5 class="modal-title">{{:title || (item && item.id ? 'Edit wish' : 'Add wish')}}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <!-- Sikre at item alltid finnes -->
+  {{if !item}}
+    {{:~root.item = {}}}
+  {{/if}}
+
+  <form id="wishlistForm"
+        action="{{:action || '/api/wishlists'}}"
+        data-method="{{:method || (item && item.id ? 'PATCH' : 'POST')}}"
+        data-send="json">
+
+    <!-- Product -->
+    <div class="mb-3">
+      <label class="form-label">Product</label>
+      <select
+        name="product_id"
+        class="form-select"
+        data-tomselect="product-single"
+        data-selected-product-id="{{:(item && item.product_id) || product_id || ''}}"
+        data-selected-product-name="{{:(item && item.product_name) || product_name || ''}}"
+      ></select>
+      <input type="hidden"
+             name="product_name"
+             value="{{:(item && item.product_name) || product_name || ''}}"
+             data-product-name>
+      <div class="form-text">Type to search or create a new product.</div>
+    </div>
+
+    <!-- Links -->
+    <div class="mb-3">
+      <label class="form-label">Links (optional)</label>
+
+      <input name="links[]" type="url" class="form-control mb-2"
+             value="{{:(item && item.links && item.links[0] && (item.links[0].url || item.links[0])) 
+                    || (links && links[0] && (links[0].url || links[0])) || ''}}"
+             placeholder="https://store.example/item-1">
+
+      <input name="links[]" type="url" class="form-control mb-2"
+             value="{{:(item && item.links && item.links[1] && (item.links[1].url || item.links[1])) 
+                    || (links && links[1] && (links[1].url || links[1])) || ''}}"
+             placeholder="https://store.example/item-2">
+
+      <input name="links[]" type="url" class="form-control"
+             value="{{:(item && item.links && item.links[2] && (item.links[2].url || item.links[2])) 
+                    || (links && links[2] && (links[2].url || links[2])) || ''}}"
+             placeholder="https://store.example/item-3">
+    </div>
+
+    <!-- Price (int) -->
+    <div class="mb-3">
+      <label class="form-label">Price</label>
+      <input name="default_price" type="number" inputmode="numeric" step="1" min="0" class="form-control"
+             value="{{:(item && item.price) || default_price || ''}}">
+      <div class="form-text">Optional. Saved on the product (no decimals).</div>
+    </div>
+
+    <!-- Priority -->
+    <div class="mb-3">
+      <label class="form-label">Priority</label>
+      <input name="priority" type="number" min="1" class="form-control" 
+             value="{{:(item && item.priority) || priority || ''}}">
+      <div class="form-text">Lower number ⇒ higher priority. Used for sorting.</div>
+    </div>
+
+    <!-- Notes -->
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="form-control" rows="3">{{:(item && item.notes) || notes || ''}}</textarea>
+    </div>
+
+    <input name="recipient_user_id" type="hidden" 
+           value="{{:(item && item.recipient_user_id) || recipient_user_id || ''}}">
+    <div class="error-message d-none"></div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="submit" form="wishlistForm" class="btn btn-primary">
+    {{:submitLabel || (item && item.id ? 'Save' : 'Add')}}
+  </button>
+</div>

@@ -9,6 +9,7 @@ use App\Controller\Event\EventsController;
 use App\Controller\Product\ProductsController;
 use App\Controller\Gift\GiftsController;
 use App\Controller\Gift\GiftOrdersController;
+use App\Controller\Wishlist\WishlistsController;
 
 class Router
 {
@@ -21,11 +22,10 @@ class Router
     public static function dispatchFromPath(string $prefix): void
     {
         try {
-            // Offentlige ruter (ingen auth)
             $publicRoutes = [
                 '/api/health',
                 '/api/auth/token',
-                '/api/auth/refresh',   // <-- NEW: refresh er offentlig
+                '/api/auth/refresh',
                 '/api/public/*',
             ];
 
@@ -50,9 +50,9 @@ class Router
                 });
 
                 // AUTH
-                $r->addRoute('POST', '/auth/token',   [AuthController::class, 'tokenExchange']); // PUBLIC
-                $r->addRoute('POST', '/auth/refresh', [AuthController::class, 'refresh']);       // PUBLIC
-                $r->addRoute('GET',  '/auth/me',      [AuthController::class, 'me']);            // PROTECTED
+                $r->addRoute('POST', '/auth/token',   [AuthController::class, 'tokenExchange']);
+                $r->addRoute('POST', '/auth/refresh', [AuthController::class, 'refresh']);
+                $r->addRoute('GET',  '/auth/me',      [AuthController::class, 'me']);
 
                 // ULID regex (26 chars, Crockford base32)
                 $ULID = '[0-9A-HJKMNP-TV-Z]{26}';
@@ -70,9 +70,8 @@ class Router
                 $r->addRoute('GET',    "/users/{id:$ULID}",    [UsersController::class, 'show']);
                 $r->addRoute('PATCH',  "/users/{id:$ULID}",    [UsersController::class, 'update']);
                 $r->addRoute('DELETE', "/users/{id:$ULID}",    [UsersController::class, 'destroy']);
-				$r->addRoute('POST',   "/users/{id:$ULID}/avatar", [UsersController::class, 'uploadAvatar']);
-				$r->addRoute('DELETE', "/users/{id:$ULID}/avatar", [UsersController::class, 'deleteAvatar']);
-
+                $r->addRoute('POST',   "/users/{id:$ULID}/avatar", [UsersController::class, 'uploadAvatar']);
+                $r->addRoute('DELETE', "/users/{id:$ULID}/avatar", [UsersController::class, 'deleteAvatar']);
 
                 // EVENTS
                 $r->addRoute('GET',    '/events',                [EventsController::class, 'index']);
@@ -82,49 +81,57 @@ class Router
                 $r->addRoute('DELETE', "/events/{id:$ULID}",     [EventsController::class, 'destroy']);
 
                 // PRODUCTS
-                $r->addRoute('GET',    '/products',            [\App\Controller\Product\ProductsController::class, 'index']);
-                $r->addRoute('POST',   '/products',            [\App\Controller\Product\ProductsController::class, 'create']);
-                $r->addRoute('GET',    "/products/{id:$ULID}", [\App\Controller\Product\ProductsController::class, 'show']);
-                $r->addRoute('PATCH',  "/products/{id:$ULID}", [\App\Controller\Product\ProductsController::class, 'update']);
-                $r->addRoute('DELETE', "/products/{id:$ULID}", [\App\Controller\Product\ProductsController::class, 'destroy']);
-				$r->addRoute('GET',    "/products/{id:$ULID}/gift-items", [\App\Controller\Product\ProductsController::class, 'giftItems']);
+                $r->addRoute('GET',    '/products',            [ProductsController::class, 'index']);
+                $r->addRoute('POST',   '/products',            [ProductsController::class, 'create']);
+                $r->addRoute('GET',    "/products/{id:$ULID}", [ProductsController::class, 'show']);
+                $r->addRoute('PATCH',  "/products/{id:$ULID}", [ProductsController::class, 'update']);
+                $r->addRoute('DELETE', "/products/{id:$ULID}", [ProductsController::class, 'destroy']);
+                $r->addRoute('GET',    "/products/{id:$ULID}/gift-items", [ProductsController::class, 'giftItems']); // kan beholdes hvis UI viser "relaterte ordrer"
 
-                // GIFTS (ny backend: opererer på gift_items)
-                $r->addRoute('GET',    '/gifts',               [\App\Controller\Gift\GiftsController::class, 'index']);
-                $r->addRoute('POST',   '/gifts',               [\App\Controller\Gift\GiftsController::class, 'create']);
-                $r->addRoute('GET',    "/gifts/{id:$ULID}",    [\App\Controller\Gift\GiftsController::class, 'show']);
-                $r->addRoute('PATCH',  "/gifts/{id:$ULID}",    [\App\Controller\Gift\GiftsController::class, 'update']);
-                $r->addRoute('DELETE', "/gifts/{id:$ULID}",    [\App\Controller\Gift\GiftsController::class, 'destroy']);
+                $r->addRoute('POST',   "/products/{id:$ULID}/image", [ProductsController::class, 'uploadImage']);
+                $r->addRoute('DELETE', "/products/{id:$ULID}/image", [ProductsController::class, 'deleteImage']);
 
-                // GIFT ORDERS
-                $r->addRoute('GET',    '/gift-orders',            [\App\Controller\Gift\GiftOrdersController::class, 'index']);
-                $r->addRoute('POST',   '/gift-orders',            [\App\Controller\Gift\GiftOrdersController::class, 'create']);
-                $r->addRoute('GET',    "/gift-orders/{id:$ULID}", [\App\Controller\Gift\GiftOrdersController::class, 'show']);
-                $r->addRoute('PATCH',  "/gift-orders/{id:$ULID}", [\App\Controller\Gift\GiftOrdersController::class, 'update']);
-                $r->addRoute('DELETE', "/gift-orders/{id:$ULID}", [\App\Controller\Gift\GiftOrdersController::class, 'destroy']);
+                // GIFT ORDERS (uten item-ruter)
+                $r->addRoute('GET',    '/gift-orders',            [GiftOrdersController::class, 'index']);
+                $r->addRoute('POST',   '/gift-orders',            [GiftOrdersController::class, 'create']);
+                $r->addRoute('GET',    "/gift-orders/{id:$ULID}", [GiftOrdersController::class, 'show']);
+                $r->addRoute('PATCH',  "/gift-orders/{id:$ULID}", [GiftOrdersController::class, 'update']);
+                $r->addRoute('DELETE', "/gift-orders/{id:$ULID}", [GiftOrdersController::class, 'destroy']);
 
-                // For enkelhets skyld – liste orders for event:
-                $r->addRoute('GET',    "/events/{id:$ULID}/gift-orders", [\App\Controller\Gift\GiftOrdersController::class, 'index']);
+                // Liste orders for event
+                $r->addRoute('GET',    "/events/{id:$ULID}/gift-orders", [GiftOrdersController::class, 'index']);
+
+				// WISHLISTS
+				$r->addRoute('GET',    '/wishlists',            [WishlistsController::class, 'index']);
+				$r->addRoute('POST',   '/wishlists',            [WishlistsController::class, 'create']);
+				$r->addRoute('GET',    "/wishlists/{id:$ULID}", [WishlistsController::class, 'show']);
+				$r->addRoute('PATCH',  "/wishlists/{id:$ULID}", [WishlistsController::class, 'update']);
+				$r->addRoute('DELETE', "/wishlists/{id:$ULID}", [WishlistsController::class, 'destroy']);
+
+				// PRODUCTS – gift history for a product (across events)
+				$r->addRoute('GET', "/products/{id:$ULID}/gift-orders", [ProductsController::class, 'giftHistory']);
+
+				// USERS – received gifts for a user (across events)
+				$r->addRoute('GET', "/users/{id:$ULID}/received-gifts", [UsersController::class, 'receivedGifts']);
+
+
             });
 
             // Klargjør request
             $httpMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
             $uri = $_SERVER['REQUEST_URI'] ?? '/';
 
-            // Fjern querystring
             if (false !== $pos = strpos($uri, '?')) {
                 $uri = substr($uri, 0, $pos);
             }
             $uri = rawurldecode($uri);
 
-            // Trim prefix (/api)
             $trimmed = $uri;
             if (str_starts_with($trimmed, $prefix)) {
                 $trimmed = substr($trimmed, strlen($prefix));
                 if ($trimmed === '') $trimmed = '/';
             }
 
-            // CORS preflight
             if ($httpMethod === 'OPTIONS') {
                 self::sendCorsHeaders();
                 http_response_code(204);
@@ -132,12 +139,10 @@ class Router
                 return;
             }
 
-            // Auth
             if (!self::isPublic($uri, $publicRoutes)) {
                 AuthMiddleware::checkAuthentication();
             }
 
-            // Dispatch
             $routeInfo = $dispatcher->dispatch($httpMethod, $trimmed);
 
             switch ($routeInfo[0]) {
@@ -151,7 +156,6 @@ class Router
                         $handler  = [$instance, $method];
                     }
 
-                    // VIKTIG: send path-vars som ett argument
                     $args = !empty($vars) ? [$vars] : [];
                     $result = call_user_func_array($handler, $args);
 

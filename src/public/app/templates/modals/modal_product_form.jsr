@@ -1,50 +1,51 @@
-<div class="modal-header">
-  <h5 class="modal-title">{{:title}}</h5>
-  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
+<!-- src/public/app/templates/modals/modal_product_form.jsr -->
+<form id="productForm"
+      action="{{:action || (product && product.id ? ('/api/products/' + product.id) : '/api/products')}}"
+      data-method="{{:method || (product && product.id ? 'PATCH' : 'POST')}}"
+      data-send="json">
 
-<div class="modal-body">
-  <form id="productForm"
-        action="{{if product && product.id}}/api/products/{{:product.id}}{{else}}/api/products{{/if}}"
-        data-method="{{if product && product.id}}PUT{{else}}POST{{/if}}"
-        data-send="json">
+  <div class="modal-header">
+    <h5 class="modal-title">{{:title || (product && product.id ? 'Edit product' : 'New product')}}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
 
+  <div class="modal-body">
     <div class="mb-3">
       <label class="form-label">Name</label>
-      <input name="name" type="text" class="form-control" value="{{:product.name}}" required>
+      <input name="name" type="text" class="form-control" value="{{:product.name || ''}}" required autofocus>
     </div>
 
     <div class="mb-3">
       <label class="form-label">Description</label>
-      <textarea name="description" class="form-control" rows="3">{{:product.description}}</textarea>
+      <textarea name="description" class="form-control" rows="3">{{:product.description || ''}}</textarea>
     </div>
 
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <label class="form-label">URL</label>
-        <input name="url" type="url" class="form-control" value="{{:product.url}}">
-      </div>
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Image URL</label>
-        <input name="image_url" type="url" class="form-control" value="{{:product.image_url}}">
-      </div>
+    <!-- Product URLs (full bredde, inntil 3) -->
+    {{if !product.links && product.url}}
+      {{: ~setLinks = (function(p){ p.links = [p.url]; return '';})(product) }}
+    {{/if}}
+
+    <div class="mb-2">
+      <label class="form-label">Product URLs</label>
+      <input name="links[0]" type="url" placeholder="https://…" class="form-control mb-2"
+             value="{{:(product.links && product.links[0]) || ''}}">
+      <input name="links[1]" type="url" placeholder="https://…" class="form-control mb-2"
+             value="{{:(product.links && product.links[1]) || ''}}">
+      <input name="links[2]" type="url" placeholder="https://…" class="form-control"
+             value="{{:(product.links && product.links[2]) || ''}}">
+      <div class="form-text">Du kan legge inn opptil tre lenker. Første lenke brukes som “primærlenke”.</div>
     </div>
 
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Default price</label>
-        <input name="default_price" type="number" step="0.01" class="form-control" value="{{:product.default_price}}">
-      </div>
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Currency</label>
-        <input name="currency_code" type="text" class="form-control" value="{{:product.currency_code || 'NOK'}}" maxlength="3">
-      </div>
+    <div class="mb-3">
+      <label class="form-label">Default price (integer)</label>
+      <input name="default_price" type="number" step="1" class="form-control" value="{{:product.price || ''}}">
+      <div class="form-text">Lagres som heltall i valuta (f.eks. NOK).</div>
     </div>
 
     <div class="error-message d-none"></div>
-  </form>
-</div>
+  </div>
 
-<div class="modal-footer">
-  <button type="submit" form="productForm" class="btn btn-primary">{{:submitLabel}}</button>
-</div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary">{{:submitLabel || (product && product.id ? 'Save' : 'Create')}}</button>
+  </div>
+</form>

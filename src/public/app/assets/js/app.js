@@ -1,7 +1,7 @@
 // src/public/app/assets/js/app.js
 import { api } from './Remote.js';
 import { setupRoutes, startRouter, requestRouteRefresh } from './routes.js';
-import { registerDataModals } from './modalHub.js'; // <-- ny: data-attribute modalhub
+import { initModalLinks } from './modalLinks.js';
 
 const qs = (s) => document.querySelector(s);
 
@@ -72,9 +72,8 @@ export async function initApp() {
     console.log('[router] startRouter()');
     startRouter();
 
-    // Data-attribute modalhub (erstatter registerGlobalModals)
-    registerDataModals(document);
-    console.log('[app] data-attribute modal hub registered');
+	// 🚀 Globale modal-lenker (produkt/bruker/event) – én gang
+  	initModalLinks();
 
     // Aktiv nav ved oppstart + ved historieendringer
     setActiveNav();
@@ -110,6 +109,13 @@ export async function initApp() {
         setActiveNav();
       }, 0);
     });
+
+    // Sikrere DnD: ikke dropp filer på siden globalt
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => {
+      if (!e.target.closest?.('[data-dropzone]')) e.preventDefault();
+    });
+
   } catch (e) {
     console.error('[app] initApp ERROR', e);
     $loading.style.display = 'none';

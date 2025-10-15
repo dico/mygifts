@@ -1,3 +1,4 @@
+// src/public/app/assets/js/pages/event_detail.js
 import { render } from '../view.js';
 import { api } from '../Remote.js';
 import { on } from '../eventBus.js';
@@ -7,21 +8,8 @@ let offChanged = null;
 let offRefresh = null;
 let currentEventId = null;
 
-const TAB_KEY = (eid) => `eventTab:${eid}`; // 'give' | 'received'
+const TAB_KEY = (eid) => `eventTab:${eid}`;
 
-function statusOrder(s) {
-  const order = { idea: 1, reserved: 2, purchased: 3, given: 4, cancelled: 9 };
-  return order[s] ?? 99;
-}
-
-function displayName(u) {
-  return (
-    u?.display_name ||
-    `${u?.firstname || ''} ${u?.lastname || ''}`.trim() ||
-    u?.email ||
-    'User'
-  );
-}
 function badgeClass(status) {
   switch (status) {
     case 'idea':      return 'text-bg-secondary';
@@ -33,94 +21,27 @@ function badgeClass(status) {
   }
 }
 
-function flattenOrdersToGifts(orders, members) {
-  const memberIds = new Set(members.map(u => u.id));
-  const byUser = new Map(members.map(u => [u.id, u]));
-
-  const out = [];
-  for (const o of orders) {
-    const givers = o.givers || [];
-    const recips = o.recipients || [];
-    for (const it of (o.items || [])) {
-      const g = {
-        id: it.id,
-        event_id: o.event_id,
-        title: it.title || it.product_name || '—',
-        notes: it.notes,
-        status: it.status,
-        planned_price: it.planned_price,
-        purchase_price: it.purchase_price,
-        currency_code: it.currency_code,
-        status_class: badgeClass(it.status),
-        // arrays fra order
-        givers,
-        recipients: recips,
-        // display-strenger (NYTT): list opp alle
-        givers_display: (givers && givers.length)
-          ? givers.map(x => x.display_name || '').filter(Boolean).join(', ')
-          : '—',
-        recipients_display: (recips && recips.length)
-          ? recips.map(x => x.display_name || '').filter(Boolean).join(', ')
-          : '—',
-        // “primær” for legacy grouping:
-        giver_user_id: givers[0]?.id || null,
-        recipient_user_id: recips[0]?.id || null,
-      };
-      out.push(g);
-    }
-  }
-
-  // Vi gir = minst én giver er medlem
-  const giftsWeGive = out.filter(g =>
-    (g.givers || []).some(x => memberIds.has(x.id))
-  );
-  // Vi mottar = minst én mottaker er medlem
-  const giftsWeReceived = out.filter(g =>
-    (g.recipients || []).some(x => memberIds.has(x.id))
-  );
-
-  function groupByRecipient(arr) {
-    const map = new Map();
-    for (const g of arr) {
-      const rid = g.recipient_user_id || g.recipients?.[0]?.id;
-      const u   = rid ? byUser.get(rid) : null;
-      if (!u) continue;
-      if (!map.has(rid)) map.set(rid, { user: u, gifts: [] });
-      map.get(rid).gifts.push(g);
-    }
-    const list = Array.from(map.values()).sort((a, b) =>
-      displayName(a.user).localeCompare(displayName(b.user))
-    );
-    for (const grp of list) {
-      grp.gifts.sort((a, b) => {
-        const sa = statusOrder(a.status);
-        const sb = statusOrder(b.status);
-        if (sa !== sb) return sa - sb;
-        return (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase());
-      });
-    }
-    return list;
-  }
-
-  return {
-    giveGroups: groupByRecipient(giftsWeGive),
-    receivedGroups: groupByRecipient(giftsWeReceived),
-  };
-}
-
 async function load(eventId) {
   try {
-    const [evRes, ordersRes, membersRes] = await Promise.all([
+    const [evRes, groupedRes] = await Promise.all([
       api(`/api/events/${eventId}`),
-      api(`/api/gift-orders?event_id=${encodeURIComponent(eventId)}`),
-      api(`/api/users`),
+      api(`/api/gift-orders?event_id=${encodeURIComponent(eventId)}`)
     ]);
 
-    const event   = evRes?.data?.event || null;
-    const orders  = ordersRes?.data?.orders || [];
-    const members = membersRes?.data?.users || [];
+    const event = evRes?.data?.event || null;
+    const data = groupedRes?.data || groupedRes || {};
+    let giveGroups     = data.give || [];
+    let receivedGroups = data.received || [];
 
-    const { giveGroups, receivedGroups } = flattenOrdersToGifts(orders, members);
+    const ensureStatusClass = (groups) => {
+      for (const grp of groups || []) {
+        for (const g of grp.gifts || []) {
+          if (!g.status_class) g.status_class = badgeClass(g.status);
+        }
+      }
+    };
+    ensureStatusClass(giveGroups);
+    ensureStatusClass(receivedGroups);
 
     const saved = localStorage.getItem(TAB_KEY(eventId));
     const activeTab = (saved === 'received') ? 'received' : 'give';
@@ -151,7 +72,7 @@ async function load(eventId) {
     });
 
   } catch (err) {
-    console.error('[eventDetailPage] load error', err);
+    console.error('[event_detail] load error', err);
     await render('event_detail', {
       title: 'Event',
       event: null,
@@ -165,16 +86,16 @@ async function load(eventId) {
 
 function bindActions(rootEl) {
   const handler = async (e) => {
-    const delGift = e.target.closest('[data-delete="gift"]');
-    if (delGift && rootEl.contains(delGift)) {
-      const id = delGift.dataset.id;
-      if (!id) return;
+    const delOrder = e.target.closest('[data-delete="order"]');
+    if (delOrder && rootEl.contains(delOrder)) {
+      const orderId = delOrder.dataset.id;
+      if (!orderId) return;
       if (!confirm('Delete this gift?')) return;
       try {
-        await api(`/api/gifts/${id}`, { method: 'DELETE' });
+        await api(`/api/gift-orders/${orderId}`, { method: 'DELETE' });
         await load(currentEventId);
       } catch (err) {
-        console.error('[eventDetailPage] delete gift error', err);
+        console.error('[event_detail] delete order error', err);
         alert('Failed to delete gift.');
       }
       return;
@@ -189,7 +110,7 @@ function bindActions(rootEl) {
         await api(`/api/events/${id}`, { method: 'DELETE' });
         window.page.show('/app/events');
       } catch (err) {
-        console.error('[eventDetailPage] delete event error', err);
+        console.error('[event_detail] delete event error', err);
         alert('Failed to delete event.');
       }
     }
@@ -211,11 +132,13 @@ export async function mount(eventId) {
   });
   await load(eventId);
 
-  const $root = document.getElementById('app');
-  unbindActions = bindActions($root);
+  const rootEl = document.getElementById('app');
+  unbindActions = bindActions(rootEl);
 
   offChanged = on('entity:changed', (p) => {
-    if (p?.entity === 'gift' || p?.entity === 'event' || p?.entity === 'order') load(currentEventId);
+    if (p?.entity === 'gift' || p?.entity === 'event' || p?.entity === 'order' || p?.entity === 'product') {
+      load(currentEventId);
+    }
   });
 
   offRefresh = (() => {
@@ -226,11 +149,8 @@ export async function mount(eventId) {
 }
 
 export function unmount() {
-  unbindActions?.();
-  offChanged?.();
-  offRefresh?.();
-  unbindActions = null;
-  offChanged = null;
-  offRefresh = null;
+  unbindActions?.(); unbindActions = null;
+  offChanged?.();    offChanged = null;
+  offRefresh?.();    offRefresh = null;
   currentEventId = null;
 }

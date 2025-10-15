@@ -12,15 +12,16 @@ class GiftOrdersController extends BaseController
     public function __construct() { $this->model = new GiftOrdersModel(); }
 
     // GET /gift-orders?event_id=...  eller /events/{id}/gift-orders
-    public function index(array $vars = []): array {
+	public function index(array $vars = []): array {
         try {
-            $me = CurrentUser::id();
-            $eid = isset($_GET['event_id']) ? (string)$_GET['event_id'] : null;
-            if (!$eid && !empty($vars['id'])) $eid = (string)$vars['id'];
+            $me  = CurrentUser::id();
+            $eid = $_GET['event_id'] ?? ($vars['id'] ?? null);
+            $eid = $eid !== null ? (string)$eid : null;
             if (!$eid) throw new \InvalidArgumentException('event_id required', 422);
 
-            $rows = $this->model->listForEvent($me, $eid);
-            return $this->ok(['orders' => $rows]);
+            // NYTT: returner allerede grupperte data (give/received)
+            $groups = $this->model->listGroupedForEvent($me, $eid);
+            return $this->ok($groups);
         } catch (\InvalidArgumentException $e) {
             return $this->error($e->getMessage(), (int)($e->getCode() ?: 422));
         } catch (\RuntimeException $e) {
@@ -31,12 +32,16 @@ class GiftOrdersController extends BaseController
         }
     }
 
+
+
+
+    // POST /gift-orders
     public function create(): array {
         try {
             $me = CurrentUser::id();
             $body = Http::jsonBody();
-            $id = $this->model->create($me, $body);
-            return $this->ok(['gift_order_id' => $id], 201);
+            $orderId = $this->model->create($me, $body);
+            return $this->ok(['gift_order_id' => $orderId], 201);
         } catch (\InvalidArgumentException $e) {
             return $this->error($e->getMessage(), (int)($e->getCode() ?: 422));
         } catch (\RuntimeException $e) {
@@ -47,6 +52,7 @@ class GiftOrdersController extends BaseController
         }
     }
 
+    // GET /gift-orders/{id}
     public function show(array $vars): array {
         try {
             $me = CurrentUser::id();
@@ -63,6 +69,7 @@ class GiftOrdersController extends BaseController
         }
     }
 
+    // PATCH /gift-orders/{id}
     public function update(array $vars): array {
         try {
             $me = CurrentUser::id();
@@ -82,6 +89,7 @@ class GiftOrdersController extends BaseController
         }
     }
 
+    // DELETE /gift-orders/{id}
     public function destroy(array $vars): array {
         try {
             $me = CurrentUser::id();

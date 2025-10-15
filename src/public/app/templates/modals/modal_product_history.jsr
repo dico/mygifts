@@ -1,0 +1,41 @@
+<!-- src/public/app/templates/modals/modal_product_history.jsr -->
+<div class="modal-header">
+  <h5 class="modal-title">Gift history – {{:product.name}}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+  {{if product.image_url}}
+    <div class="mb-3"><img src="{{:product.image_url}}" alt="{{:product.name}}" style="max-height:80px"></div>
+  {{/if}}
+  {{if rows && rows.length}}
+    <div class="list-group">
+      {{for rows}}
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <div class="fw-semibold">{{:title || product.name || '—'}}</div>
+            <span class="badge text-capitalize {{if status==='given'}}text-bg-success{{else status==='purchased'}}text-bg-primary{{else status==='reserved'}}text-bg-warning{{else status==='idea'}}text-bg-secondary{{else}}text-bg-dark{{/if}}">{{:status}}</span>
+          </div>
+          <div class="small text-muted">
+            To:
+            {{if recipients && recipients.length}}
+              {{for recipients}}
+                <a href="#" data-link-user="{{:id}}">{{:display_name}}</a>{{if #getIndex() < #get("array").length-1}}, {{/if}}
+              {{/for}}
+            {{else}}—{{/if}}
+            {{if givers && givers.length}}
+              · From:
+              {{for givers}}
+                <a href="#" data-link-user="{{:id}}">{{:display_name}}</a>{{if #getIndex() < #get("array").length-1}}, {{/if}}
+              {{/for}}
+            {{/if}}
+            · Event: <a href="#" data-link-event="{{:event.id}}">{{:event.name || '—'}}</a>
+            {{if price}} · Value: {{:price}}{{/if}}
+          </div>
+          {{if notes}}<div class="mt-1">{{:notes}}</div>{{/if}}
+        </div>
+      {{/for}}
+    </div>
+  {{else}}
+    <div class="text-muted">No history yet.</div>
+  {{/if}}
+</div>

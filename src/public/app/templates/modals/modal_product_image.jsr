@@ -1,0 +1,54 @@
+<!-- src/public/app/templates/modals/modal_product_image.jsr -->
+<style>
+  .dropzone { border: 2px dashed rgba(0,0,0,.12); border-radius: .5rem; background:#f8f9fa; transition: background .15s, border-color .15s; cursor:pointer; }
+  .dropzone.drop-active { background:#eef6ff; border-color:#86b7fe; }
+</style>
+
+<div class="modal-header">
+  <h5 class="modal-title">{{:title || 'Upload image'}}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <form
+    class="mt-2"
+    action="/api/products/{{:product.id}}/image"
+    method="POST"
+    enctype="multipart/form-data"
+    data-send="formdata"
+  >
+    <div class="dropzone p-4 d-flex align-items-center gap-3" data-upload-picker data-dropzone>
+      <!-- Live preview -->
+      <img data-file-preview class="rounded border d-none" src="" alt="Preview" width="96" height="96" style="object-fit: cover;" />
+
+      <!-- Current image -->
+      {{if product && product.image_url}}
+        <img data-file-current class="rounded border" src="{{:product.image_url}}" alt="Current image" width="96" height="96" style="object-fit: cover;" />
+      {{/if}}
+
+      <div class="flex-grow-1">
+        <div class="fw-semibold mb-1">Drag & drop an image here</div>
+        <div class="small text-muted">Or click anywhere in this box. JPG/PNG/WEBP, up to 16&nbsp;MB.</div>
+        <div class="small mt-1"><em data-file-name></em></div>
+      </div>
+
+      <input type="file" name="file" accept="image/*" class="d-none" data-file-input />
+    </div>
+
+    <div class="mt-3 d-flex justify-content-between gap-2">
+      {{if product && product.image_url}}
+        <button
+          type="button"
+          class="btn btn-outline-danger"
+          data-remove-product-image
+          data-product-id="{{:product.id}}"
+        >Remove image</button>
+      {{/if}}
+
+      <div class="ms-auto d-flex gap-2">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </div>
+    </div>
+  </form>
+</div>

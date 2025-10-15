@@ -30,6 +30,23 @@ class UsersController extends BaseController
         }
     }
 
+
+	public function receivedGifts(array $vars): array {
+		try {
+			$me = \App\Model\User\CurrentUser::id();
+			$uid = (string)($vars['id'] ?? '');
+			if (!$uid) return $this->error('user id required', 422);
+
+			$model = new \App\Model\Gift\GiftOrdersModel();
+			$rows  = $model->listReceivedByUser($me, $uid);
+			return $this->ok($rows);
+		} catch (\Throwable $e) {
+			error_log('[UsersController.receivedGifts] '.$e->getMessage());
+			return $this->error('Failed to load received gifts', 500);
+		}
+	}
+
+
     /** POST /users – create user and attach to tenant */
     public function create(): array
     {

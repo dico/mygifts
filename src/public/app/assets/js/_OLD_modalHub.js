@@ -4,59 +4,57 @@ import { showModal, closeModal } from './modalRenderer.js';
 import FormHandler from './FormHandler.js';
 import { emit } from './eventBus.js';
 
-/** Replace {tokens} in a string with values from ctx (dataset + computed) */
-function tpl(str, ctx) {
-  if (!str || typeof str !== 'string') return str;
-  return str.replace(/\{([^}]+)\}/g, (_, key) => (ctx[key] ?? ''));
+/** Lokal, sikker template-replacer: "{token}" -> ctx[token] */
+function _tpl(str, ctx) {
+  if (!str || typeof str !== 'string') return str || '';
+  return str.replace(/\{([^}]+)\}/g, (_, key) => (ctx && key in ctx ? ctx[key] : ''));
 }
 
-/** Deep merge (very small, good enough for modal data) */
+/** Liten deep-merge for modaldata */
 function deepMerge(target = {}, source = {}) {
   for (const k of Object.keys(source || {})) {
-    if (source[k] && typeof source[k] === 'object' && !Array.isArray(source[k])) {
-      target[k] = deepMerge(target[k] || {}, source[k]);
+    const v = source[k];
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      target[k] = deepMerge(target[k] || {}, v);
     } else {
-      target[k] = source[k];
+      target[k] = v;
     }
   }
   return target;
 }
 
-/** Safe JSON parse for data attributes */
+/** Trygg JSON-parse */
 function parseJSON(value, fallback) {
   if (!value) return fallback;
   try { return JSON.parse(value); } catch { return fallback; }
 }
 
-/** Resolve a dotted path like "data.gift_id" from an object */
+/** data.gift_id -> verdi */
 function getPath(obj, path) {
   if (!path) return undefined;
   return path.split('.').reduce((acc, p) => (acc == null ? acc : acc[p]), obj);
 }
 
-/** Try to unwrap common API shapes into the payload the template actually needs */
+/** Pakk ut nyttelast typ data.{singular} */
 function unwrapApiPayload(res) {
-  if (res && typeof res === 'object') {
-    if ('data' in res) {
-      const d = res.data;
-      if (d && typeof d === 'object') {
-        const keys = Object.keys(d);
-        if (keys.length === 1 && typeof d[keys[0]] === 'object') {
-          return d[keys[0]]; // e.g. data.user
-        }
-      }
+  if (res && typeof res === 'object' && 'data' in res) {
+    const d = res.data;
+    if (d && typeof d === 'object') {
+      const keys = Object.keys(d);
+      if (keys.length === 1 && typeof d[keys[0]] === 'object') return d[keys[0]];
       return d;
     }
   }
   return res;
 }
 
-/** Tom Select init helpers */
+/** Tom Select initer */
 function initTomSelects(modalEl, fetched) {
   // Users (multi)
   modalEl.querySelectorAll('[data-tomselect="users-multi"]').forEach((el) => {
     const users = (fetched.members?.users) || fetched.members || [];
-    const prefill = fetched.prefill_recipient_ids || [];
+    const prefillG = fetched.prefill_giver_ids || [];
+    const prefillR = fetched.prefill_recipient_ids || [];
     const opts = users.map(u => ({
       id: u.id,
       display_name: u.display_name || `${u.firstname||''} ${u.lastname||''}`.trim() || u.email || 'User'
@@ -70,44 +68,59 @@ function initTomSelects(modalEl, fetched) {
       persist: false,
       create: false
     });
-    if (el.name.startsWith('recipient_user_ids') && prefill.length) {
-      ts.setValue(prefill, true);
-    }
+    if (el.name.startsWith('recipient_user_ids') && prefillR.length) ts.setValue(prefillR, true);
+    if (el.name.startsWith('giver_user_ids')     && prefillG.length) ts.setValue(prefillG, true);
   });
 
-  // Product (single, AUTHed AJAX + create)
+  // Product (single)
   const prodEl = modalEl.querySelector('[data-tomselect="product-single"]');
   if (prodEl) {
-    const hiddenName = modalEl.querySelector('#giftProductName');
+    const hiddenName = modalEl.querySelector('[data-product-name]') || modalEl.querySelector('#giftProductName');
     // eslint-disable-next-line no-undef
     const ts = new TomSelect(prodEl, {
       valueField: 'id',
       labelField: 'name',
       searchField: ['name'],
+      maxItems: 1,
+      delimiter: '\u0000',
+      splitOn: null,
+      plugins: [],
+      persist: false,
+      selectOnTab: true,
+      closeAfterSelect: true,
       create: (input) => {
         if (hiddenName) hiddenName.value = input;
         return { id: '', name: input };
       },
-      load: function(query, cb) {
+      load: (query, cb) => {
         if (!query || query.trim() === '') return cb();
         api(`/api/products?q=${encodeURIComponent(query)}&limit=20`)
-          .then((res) => {
-            const arr = (res?.data?.products) || res?.products || [];
-            cb(arr);
-          })
+          .then((res) => cb((res?.data?.products) || res?.products || []))
           .catch(() => cb());
+      },
+      render: {
+        option: (d) => `<div class="ts-opt">${d.name || ''}</div>`,
+        item:   (d) => `<div class="ts-item">${d.name || ''}</div>`
       },
       onChange: (val) => {
         if (!hiddenName) return;
-        if (val && ts.options[val] && ts.options[val].id) {
-          hiddenName.value = '';
-        }
+        const opt = val && ts.options[val];
+        if (opt && opt.id) hiddenName.value = ''; // valgt eksisterende => tøm name
       }
     });
+
+    // Prefill ved edit (fra ordre)
+    const selectedId   = prodEl.getAttribute('data-selected-product-id') || fetched?.order?.product_id || '';
+    const selectedName = prodEl.getAttribute('data-selected-product-name') || fetched?.order?.product_name || '';
+    if (selectedId) {
+      if (!ts.options[selectedId]) ts.addOption({ id: selectedId, name: selectedName || '(current product)' });
+      ts.setValue(selectedId, true);
+      if (hiddenName) hiddenName.value = '';
+    }
   }
 }
 
-/** Image preview helper */
+/** Preview for bildeopplasting */
 function showPreview(previewEl, currentEl, file) {
   if (!previewEl || !file) return;
   try {
@@ -118,7 +131,7 @@ function showPreview(previewEl, currentEl, file) {
   } catch {}
 }
 
-/** Drag & drop + single-open guarded picker */
+/** Drag & drop + guarded picker */
 function initUploadPickers(modalEl) {
   modalEl.querySelectorAll('[data-upload-picker]').forEach((wrap) => {
     if (wrap.__pickerInit) return;
@@ -144,19 +157,13 @@ function initUploadPickers(modalEl) {
       }, 0);
     };
 
-    // Clicking the zone opens picker (but not if clicking directly on input)
-    if (zone) {
-      zone.addEventListener('click', (e) => {
-        const realInput = e.target.closest('input[type="file"][data-file-input]');
-        if (realInput) return;
-        openDialog(e);
-      });
-    }
-
-    // Prevent bubbling double-open
+    if (zone) zone.addEventListener('click', (e) => {
+      const realInput = e.target.closest('input[type="file"][data-file-input]');
+      if (realInput) return;
+      openDialog(e);
+    });
     input.addEventListener('click', (e) => e.stopPropagation(), { capture: true });
 
-    // Change => preview + filename
     input.addEventListener('change', () => {
       const f = input.files && input.files[0];
       if (!f) return;
@@ -165,26 +172,19 @@ function initUploadPickers(modalEl) {
       zone?.classList.remove('drop-active');
     });
 
-    // DnD
     const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
     const onDragOver = (e) => { stop(e); zone?.classList.add('drop-active'); };
-    const onDragEnter = onDragOver;
     const onDragLeave = (e) => { stop(e); if (e.target === zone) zone?.classList.remove('drop-active'); };
     const onDrop = (e) => {
       stop(e);
       zone?.classList.remove('drop-active');
       const files = e.dataTransfer?.files;
       if (!files?.length) return;
-
       const f = files[0];
-      if (!/^image\//i.test(f.type)) {
-        alert('Please drop an image file.');
-        return;
-      }
+      if (!/^image\//i.test(f.type)) { alert('Please drop an image file.'); return; }
       const dt = new DataTransfer();
       dt.items.add(f);
       input.files = dt.files;
-
       if (nameEl) nameEl.textContent = f.name;
       showPreview(previewEl, currentEl, f);
     };
@@ -195,39 +195,31 @@ function initUploadPickers(modalEl) {
   });
 }
 
-/** Open a modal from a clicked element */
+/** Åpne modal fra klikket element */
 async function openFromElement(btn) {
   const template = btn.dataset.modalTemplate;
   if (!template) { console.error('[modalHub] Missing data-modal-template'); return; }
 
-  // Dataset -> context
+  // Dataset -> context (+ snake_case for xxxId)
   const datasetCtx = { ...btn.dataset };
   for (const k of Object.keys(btn.dataset)) {
     if (k.includes('-')) datasetCtx[k.replace(/-/g, '_')] = btn.dataset[k];
-    if (/^[a-z]+Id$/.test(k)) {
-      const snake = k.replace(/Id$/, '_id');
-      datasetCtx[snake] = btn.dataset[k];
-    }
+    if (/^[a-z]+Id$/.test(k)) datasetCtx[k.replace(/Id$/, '_id')] = btn.dataset[k];
   }
 
   const title       = btn.dataset.modalTitle || '';
   const submitLabel = btn.dataset.modalSubmitLabel || '';
   const formIdAttr  = btn.dataset.modalFormId || null;
-  const actionRaw   = btn.dataset.modalAction || '';
-  const action      = tpl(actionRaw, datasetCtx);
-  const hasId       = !!(btn.dataset.id);
-
-  // Only use explicit data-modal-method (don't default PATCH)
-  const method = btn.dataset.modalMethod ? btn.dataset.modalMethod.toUpperCase() : null;
 
   const preset  = parseJSON(btn.dataset.modalPreset, {});
   const sources = parseJSON(btn.dataset.modalSources, []);
   const fetched = {};
 
+  // Hent oppgitte kilder
   if (Array.isArray(sources) && sources.length) {
     const jobs = sources.map(async (s) => {
       const key = s.key;
-      const url = tpl(s.url, datasetCtx);
+      const url = _tpl(s.url, datasetCtx);
       try {
         const res = await api(url);
         fetched[key] = unwrapApiPayload(res);
@@ -239,10 +231,34 @@ async function openFromElement(btn) {
     await Promise.all(jobs);
   }
 
+  // Kun for gift-order-modal: hent ordren hvis vi har id og ikke allerede har den
+  const datasetOrderId = datasetCtx.order_id || datasetCtx.orderId;
+  if (datasetOrderId && !fetched.order && template === 'modals/modal_gift_form') {
+    try {
+      const res = await api(`/api/gift-orders/${datasetOrderId}`);
+      fetched.order = unwrapApiPayload(res);
+    } catch (e) {
+      console.warn('[modalHub] could not fetch order for prefill', e);
+    }
+  }
+
+  // Prefill deltakere fra ordre (kun relevant hvis vi faktisk har en ordre)
+  if (fetched.order && typeof fetched.order === 'object') {
+    const g = Array.isArray(fetched.order.givers)     ? fetched.order.givers.map(u => u.id) : [];
+    const r = Array.isArray(fetched.order.recipients) ? fetched.order.recipients.map(u => u.id) : [];
+    fetched.prefill_giver_ids = g;
+    fetched.prefill_recipient_ids = r;
+  }
+
+  // Sett eventId i renderData (brukes i ny-opprett av ordre)
+  const resolvedEventId = datasetCtx.event_id || datasetCtx.eventId || fetched?.order?.event_id || null;
+
   const renderData = deepMerge(
-    { title, submitLabel, isEdit: hasId, action, method },
+    { title, submitLabel, isEdit: !!(fetched.order?.id || preset?.order?.id || datasetOrderId), eventId: resolvedEventId },
     deepMerge(fetched, preset)
   );
+
+  const safeOrderId = renderData?.order?.id || datasetOrderId || '';
 
   const { modalEl } = await showModal({
     template,
@@ -251,54 +267,46 @@ async function openFromElement(btn) {
       const form = modalEl.querySelector('form');
       if (!form) return;
 
-      if (action) form.setAttribute('action', action);
-      if (method) form.dataset.method = method; // don't override unless set
+      // ★★★ VIKTIG GUARD: Bare modalen for gift-orders har data-order-patch
+      const isOrderForm = form.hasAttribute('data-order-patch');
+
+      if (isOrderForm) {
+        // Vi overstyrer action/method KUN for gift-order-skjemaet
+        if (safeOrderId) {
+          // PATCH
+          form.dataset.method = 'PATCH';
+          form.setAttribute('action', `/api/gift-orders/${safeOrderId}`);
+          // ikke send event_id ved edit
+          form.querySelector('input[name="event_id"]')?.remove();
+        } else {
+          // POST
+          form.dataset.method = 'POST';
+          form.setAttribute('action', `/api/gift-orders`);
+        }
+      } else {
+        // For alle andre modaler (f.eks. user): respekter det som står i templaten
+        // (IKKE rør action/method)
+      }
+
       if (formIdAttr) form.setAttribute('id', formIdAttr);
 
-      // INIT widgets
       initTomSelects(modalEl, renderData);
       initUploadPickers(modalEl);
 
-      // --- Remove avatar button handler (if present in template) ---
-      const rmBtn = modalEl.querySelector('[data-remove-avatar]');
-      if (rmBtn) {
-        rmBtn.addEventListener('click', async () => {
-          const uid = rmBtn.getAttribute('data-user-id');
-          if (!uid) return;
-          if (!confirm('Remove this photo?')) return;
-
-          try {
-            await api(`/api/users/${uid}/avatar`, { method: 'DELETE' });
-            // Notify lists to refresh and close modal
-            emit('entity:changed', { entity: 'user', id: uid, op: 'update' });
-            closeModal();
-          } catch (e) {
-            console.error('[modalHub] remove avatar failed', e);
-            alert('Failed to remove photo');
-          }
-        });
-      }
-      // -------------------------------------------------------------
-
-      // Bind submit handler
       new FormHandler(form, {
         resetOnSuccess: false,
         onSuccess: (resp) => {
-          const entity   = btn.dataset.emitEntity || null;
-          const idPath   = btn.dataset.emitIdPath || 'data.id';
-          const idValue  = getPath(resp, idPath) || btn.dataset.id || null;
-          const opCreate = btn.dataset.emitOpCreate || 'create';
-          const opUpdate = btn.dataset.emitOpUpdate || 'update';
-          const op       = hasId ? opUpdate : opCreate;
+          // Emit type avhenger: hvis ordreform -> 'order', ellers les fra data-emit-entity
+          const explicitEntity = btn.dataset.emitEntity;
+          const entity = isOrderForm ? 'order' : (explicitEntity || 'entity');
+          const idPath = btn.dataset.emitIdPath || (isOrderForm ? 'data.gift_order_id' : null);
 
-          if (entity) {
-            emit('entity:changed', {
-              entity,
-              id: idValue,
-              op,
-              event_id: datasetCtx.event_id || datasetCtx.eventId || undefined,
-            });
-          }
+          emit('entity:changed', {
+            entity,
+            id: safeOrderId || (idPath ? getPath(resp, idPath) : null) || null,
+            op: safeOrderId ? 'update' : 'create',
+            event_id: isOrderForm ? (resolvedEventId || undefined) : undefined,
+          });
           closeModal();
         },
       });
@@ -311,7 +319,6 @@ export function registerDataModals(root = document) {
     const btn = e.target.closest('[data-modal="open"]');
     if (!btn) return;
     if (!root.contains(btn)) return;
-
     e.preventDefault();
     openFromElement(btn);
   };

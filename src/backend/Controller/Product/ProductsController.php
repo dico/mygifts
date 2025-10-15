@@ -27,6 +27,24 @@ class ProductsController extends BaseController
         }
     }
 
+
+	public function giftHistory(array $vars): array {
+		try {
+			$me = \App\Model\User\CurrentUser::id();
+			$pid = (string)($vars['id'] ?? '');
+			if (!$pid) return $this->error('product id required', 422);
+
+			$model = new \App\Model\Gift\GiftOrdersModel();
+			$rows  = $model->listByProduct($me, $pid);
+			return $this->ok($rows);
+		} catch (\Throwable $e) {
+			error_log('[ProductsController.giftHistory] '.$e->getMessage());
+			return $this->error('Failed to load product gift history', 500);
+		}
+	}
+
+
+
     /** POST /products */
     public function create(): array {
         try {
@@ -50,6 +68,7 @@ class ProductsController extends BaseController
             $me = CurrentUser::id();
             $pid = (string)($vars['id'] ?? '');
             $row = $this->model->getProduct($me, $pid);
+            // getProduct returnerer ['status'=>'success','data'=>[...] ]
             return $this->ok($row['data'] ?? $row);
         } catch (\UnexpectedValueException $e) {
             return $this->error($e->getMessage(), (int)($e->getCode() ?: 404));
@@ -98,30 +117,64 @@ class ProductsController extends BaseController
         }
     }
 
+    /** GET /products/{id}/gift-items */
+    public function giftItems(array $vars): array {
+        try {
+            $me  = CurrentUser::id();
+            $pid = (string)($vars['id'] ?? '');
+            if ($pid === '') return $this->error('Missing product id', 400);
 
-	// I class ProductsController
-	public function giftItems(array $vars): array {
-		try {
-			$me  = \App\Model\User\CurrentUser::id();
-			$pid = (string)($vars['id'] ?? '');
-			if ($pid === '') return $this->error('Missing product id', 400);
+            // Verifiser at produkt finnes i tenant
+            $pm = new ProductsModel();
+            $pm->getProduct($me, $pid);
 
-			// sikkerhet: verifiser at produktet finnes i denne household
-			$pm = new \App\Model\Product\ProductsModel();
-			$pm->getProduct($me, $pid); // vil kaste 404/403 hvis ikke
+            $gm = new \App\Model\Gift\GiftsModel();
+            $items = $gm->listForProduct($me, $pid);
 
-			$gm = new \App\Model\Gift\GiftsModel();
-			$items = $gm->listForProduct($me, $pid);
+            return $this->ok(['items' => $items]);
+        } catch (\UnexpectedValueException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 404));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 403));
+        } catch (\Throwable $e) {
+            error_log('[ProductsController.giftItems] '.$e->getMessage());
+            return $this->error('Failed to fetch gift items for product', 500);
+        }
+    }
 
-			return $this->ok(['items' => $items]);
-		} catch (\UnexpectedValueException $e) {
-			return $this->error($e->getMessage(), (int)($e->getCode() ?: 404));
-		} catch (\RuntimeException $e) {
-			return $this->error($e->getMessage(), (int)($e->getCode() ?: 403));
-		} catch (\Throwable $e) {
-			error_log('[ProductsController.giftItems] '.$e->getMessage());
-			return $this->error('Failed to fetch gift items for product', 500);
-		}
-	}
+    /** POST /products/{id}/image (multipart form field "file") */
+    public function uploadImage(array $vars): array {
+        try {
+            $me  = CurrentUser::id();
+            $pid = (string)($vars['id'] ?? '');
+            $out = $this->model->uploadImage($me, $pid, $_FILES['file'] ?? null);
+            return $this->ok($out, 201);
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 400));
+        } catch (\UnexpectedValueException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 404));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 403));
+        } catch (\Throwable $e) {
+            error_log('[ProductsController.uploadImage] '.$e->getMessage());
+            return $this->error('Upload failed', 500);
+        }
+    }
 
+    /** DELETE /products/{id}/image */
+    public function deleteImage(array $vars): array {
+        try {
+            $me  = CurrentUser::id();
+            $pid = (string)($vars['id'] ?? '');
+            $this->model->removeImage($me, $pid);
+            return $this->ok();
+        } catch (\UnexpectedValueException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 404));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 403));
+        } catch (\Throwable $e) {
+            error_log('[ProductsController.deleteImage] '.$e->getMessage());
+            return $this->error('Failed to remove image', 500);
+        }
+    }
 }

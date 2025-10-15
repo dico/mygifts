@@ -1,7 +1,32 @@
-<div class="d-flex align-items-center mb-3">
+<!-- src/public/app/templates/products.jsr -->
+<div class="toolbar d-flex align-items-center mb-3">
   <h5 class="mb-0">{{:title}}</h5>
-  <div class="ms-auto" style="max-width:260px">
-    <input id="prodSearch" class="form-control form-control-sm" placeholder="Search products…" value="{{:q||''}}">
+
+  <div class="ms-auto d-flex align-items-center gap-2" style="max-width:420px">
+    <div style="width:260px">
+      <input id="prodSearch" class="form-control form-control-sm" placeholder="Search products…" value="{{:q||''}}">
+    </div>
+
+    <!-- New product (ModalMini) -->
+    <button
+      class="btn btn-primary btn-sm"
+      data-mm="open"
+      data-mm-template="modals/modal_product_form"
+      data-mm-title="New product"
+      data-mm-submit-label="Create"
+      data-mm-method="POST"
+      data-mm-form-id="productForm"
+      data-mm-emit-entity="product"
+      data-mm-preset='{
+        "product": {
+          "name": "",
+          "description": "",
+          "links": ["", "", ""],
+          "price": "",
+          "image_url": null
+        }
+      }'
+    >New product</button>
   </div>
 </div>
 
@@ -12,22 +37,63 @@
   </div>
 {{else}}
   {{if products && products.length}}
-    <div class="row g-3">
+    <div class="stack-md">
       {{for products}}
-        <div class="col-12 col-md-6 col-lg-4">
-          <a class="text-decoration-none" href="/app/products/{{:id}}">
-            <div class="card h-100 shadow-sm">
-              {{if image_url}}
-                <img src="{{:image_url}}" class="card-img-top" alt="">
-              {{/if}}
-              <div class="card-body">
-                <h6 class="card-title mb-1">{{:name}}</h6>
-                {{if description}}
-                  <div class="small text-muted">{{:description}}</div>
+        <div class="item-row">
+          <div class="thumb thumb--sm">
+            {{if image_url}}<img src="{{:image_url}}" alt="{{:name}}">{{/if}}
+          </div>
+
+          <div class="item-row__main">
+            <div class="fw-semibold text-truncate-1">
+				<a href="#" data-link-product="{{:id}}">{{:name}}</a>
+			</div>
+            <div class="item-row__meta">
+              {{if description}}<span class="text-muted text-truncate-1">{{:description}}</span>{{/if}}
+              {{if ((description) && (url))}} · {{/if}}
+              {{if url}}
+                {{if links && links.length}}
+                  {{for links}}
+                    {{if #index === 0}}
+                      <a href="{{:url}}" target="_blank" rel="noopener">{{:store_name || ~fallbackStoreName(url)}}</a>
+                    {{/if}}
+                  {{/for}}
+                {{else}}
+                  <a href="{{:url}}" target="_blank" rel="noopener">{{:primary_store_name || 'Link'}}</a>
                 {{/if}}
-              </div>
+              {{/if}}
             </div>
-          </a>
+          </div>
+
+          <div class="item-row__price">
+            {{if price}}<span class="price">{{:price}}</span>{{/if}}
+          </div>
+
+          <div class="item-row__actions">
+            <button
+              class="btn btn-outline-primary btn-sm me-1"
+              data-mm="open"
+              data-mm-template="modals/modal_product_image"
+              data-mm-title="Upload image"
+              data-mm-sources='[{"key":"product","url":"/api/products/{id}"}]'
+              data-id="{{:id}}"
+            >Image</button>
+
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              data-mm="open"
+              data-mm-template="modals/modal_product_form"
+              data-mm-title="Edit product"
+              data-mm-submit-label="Save"
+              data-mm-method="PATCH"
+              data-mm-sources='[{"key":"product","url":"/api/products/{id}"}]'
+              data-mm-form-id="productForm"
+              data-mm-emit-entity="product"
+              data-id="{{:id}}"
+            >Edit</button>
+
+            <button class="btn btn-outline-danger btn-sm" data-delete="product" data-id="{{:id}}">Delete</button>
+          </div>
         </div>
       {{/for}}
     </div>
@@ -35,3 +101,12 @@
     <div class="alert alert-light border">No products found.</div>
   {{/if}}
 {{/if}}
+
+{{* helpers *}}
+{{* ~fallbackStoreName = function(u){
+  try {
+    const h = (new URL(u)).hostname.replace(/^www\./,'');
+    const base = h.split('.').slice(0, -1)[0] || h.split('.')[0] || h;
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  } catch(e) { return 'Link'; }
+} *}}

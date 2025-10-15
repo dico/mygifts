@@ -4,76 +4,29 @@ import { api } from '../Remote.js';
 import { on } from '../eventBus.js';
 
 let offChanged = null;
+let unbindDelete = null;
 
-/**
- * Gjør om gamle knapper (data-open="user") til nye data-modal="open"
- * slik at modalHub tar over. Bruker "users"-array for å pre-fylle edit-skjema.
- */
-function upgradeUserButtons(rootEl, users = []) {
-  const byId = new Map(users.map(u => [u.id, u]));
+function bindDeleteActions(rootEl, reloadFn) {
+  const handler = async (e) => {
+    const delBtn = e.target.closest('[data-delete="user"]');
+    if (!delBtn || !rootEl.contains(delBtn)) return;
 
-  // Ny bruker-knapp (ingen data-id)
-  rootEl.querySelectorAll('button[data-open="user"]:not([data-id])').forEach(btn => {
-    btn.removeAttribute('data-open');
+    const id = delBtn.getAttribute('data-id');
+    if (!id) return;
 
-    btn.setAttribute('data-modal', 'open');
-    btn.setAttribute('data-modal-template', 'modals/modal_user_form');
-    btn.setAttribute('data-modal-title', 'New user');
-    btn.setAttribute('data-modal-action', '/api/users');
-    btn.setAttribute('data-modal-method', 'POST');
-    btn.setAttribute('data-modal-form-id', 'userForm');
+    if (!confirm('Remove this user from the household?')) return;
 
-    // Viktig: slik at lister reloader + vi får ID fra create-responsen
-    btn.setAttribute('data-emit-entity', 'user');
-    btn.setAttribute('data-emit-id-path', 'data.user_id');
+    try {
+      await api(`/api/users/${id}`, { method: 'DELETE' });
+      await reloadFn();
+    } catch (err) {
+      console.error('[people] delete error', err);
+      alert('Failed to delete user.');
+    }
+  };
 
-    // Tom preset (skjema starter blankt)
-    btn.setAttribute('data-modal-preset', JSON.stringify({
-      user: {
-        id: null,
-        firstname: '',
-        lastname: '',
-        email: null,
-        mobile: null,
-        is_family_member: 1,
-        is_manager: 0,
-      }
-    }));
-  });
-
-  // Edit-knapper (har data-id)
-  rootEl.querySelectorAll('button[data-open="user"][data-id]').forEach(btn => {
-    const id = btn.getAttribute('data-id');
-    const u  = byId.get(id);
-    btn.removeAttribute('data-open');
-
-    btn.setAttribute('data-modal', 'open');
-    btn.setAttribute('data-modal-template', 'modals/modal_user_form');
-    btn.setAttribute('data-modal-title', 'Edit user');
-    btn.setAttribute('data-modal-action', `/api/users/${id}`);
-    btn.setAttribute('data-modal-method', 'PATCH');
-    btn.setAttribute('data-modal-form-id', 'userForm');
-
-    // Etter PATCH svarer backend bare OK, men modalHub vil bruke dataset.id som fallback
-    btn.setAttribute('data-emit-entity', 'user');
-
-    // Pre-fyll skjemaet fra listen vi allerede lastet
-    // (unngår ekstra GET /api/users/{id})
-    const presetUser = u ? {
-      id: u.id,
-      firstname: u.firstname || '',
-      lastname:  u.lastname  || '',
-      email:     u.email ?? null,
-      mobile:    u.mobile ?? null,
-      // is_family_member/is_manager kommer fra API som boolean – modal/template støtter både 0/1 og bool
-      is_family_member: u.is_family_member ? 1 : 0,
-      is_manager:       u.is_manager ? 1 : 0,
-    } : {
-      id, firstname: '', lastname: '', email: null, mobile: null, is_family_member: 1, is_manager: 0
-    };
-
-    btn.setAttribute('data-modal-preset', JSON.stringify({ user: presetUser }));
-  });
+  rootEl.addEventListener('click', handler);
+  return () => rootEl.removeEventListener('click', handler);
 }
 
 export async function mount() {
@@ -96,9 +49,10 @@ export async function mount() {
         loading: false
       });
 
-      // Etter render: oppgrader knappene til data-modal-varianten
       const rootEl = document.getElementById('app');
-      upgradeUserButtons(rootEl, users);
+
+      if (typeof unbindDelete === 'function') { try { unbindDelete(); } catch {} }
+      unbindDelete = bindDeleteActions(rootEl, load);
 
     } catch (err) {
       console.error('[people] load ERROR', err);
@@ -123,8 +77,7 @@ export async function mount() {
 }
 
 export function unmount() {
-  if (typeof offChanged === 'function') {
-    try { offChanged(); } catch {}
-  }
-  offChanged = null;
+  offChanged?.(); offChanged = null;
+  if (typeof unbindDelete === 'function') { try { unbindDelete(); } catch {} }
+  unbindDelete = null;
 }

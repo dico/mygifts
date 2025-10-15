@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   lastname             VARCHAR(120) NOT NULL,
   email                VARCHAR(254) NULL,             -- globally unique if provided (NULL allowed)
   mobile               VARCHAR(30) NULL,
-  profile_image_url    VARCHAR(500) NULL,             -- NEW: optional avatar/profile image
+  profile_image_url    VARCHAR(500) NULL,             -- optional avatar/profile image
   can_login            TINYINT(1) NOT NULL DEFAULT 0,
   password_hash        VARCHAR(255) NULL,
   is_active            TINYINT(1) NOT NULL DEFAULT 1,
@@ -99,56 +99,33 @@ CREATE TABLE IF NOT EXISTS product_links (
   INDEX idx_pl_active (product_id, is_active)
 ) ENGINE=InnoDB;
 
--- 6) Gifts (legacy/simple: one row per giver->recipient gift)
--- Beholdes for bakoverkompatibilitet; ny modell under (gift_orders + gift_items)
-CREATE TABLE IF NOT EXISTS gifts (
-  id                CHAR(26) PRIMARY KEY,
-  household_id      CHAR(26) NOT NULL,
-  giver_user_id     CHAR(26) NOT NULL,
-  recipient_user_id CHAR(26) NOT NULL,
-  event_id          CHAR(26) NULL,
-  product_id        CHAR(26) NULL,
-  title             VARCHAR(200) NOT NULL,         -- free text; can repeat across households
-  notes             TEXT,
-  status            ENUM('idea','reserved','purchased','given','cancelled') NOT NULL DEFAULT 'idea',
-  is_hidden_from_recipient TINYINT(1) NOT NULL DEFAULT 1,
-  planned_price     DECIMAL(12,2) NULL,
-  purchase_price    DECIMAL(12,2) NULL,
-  currency_code     CHAR(3) NOT NULL DEFAULT 'NOK',
-  purchased_at      DATETIME NULL,
-  given_at          DATETIME NULL,
-  created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_g_house     FOREIGN KEY (household_id)      REFERENCES households(id) ON DELETE CASCADE,
-  CONSTRAINT fk_g_giver     FOREIGN KEY (giver_user_id)     REFERENCES users(id)      ON DELETE RESTRICT,
-  CONSTRAINT fk_g_recipient FOREIGN KEY (recipient_user_id) REFERENCES users(id)      ON DELETE RESTRICT,
-  CONSTRAINT fk_g_event     FOREIGN KEY (event_id)          REFERENCES events(id)     ON DELETE SET NULL,
-  CONSTRAINT fk_g_product   FOREIGN KEY (product_id)        REFERENCES products(id)   ON DELETE SET NULL,
-  INDEX idx_g_house (household_id),
-  INDEX idx_g_event (event_id),
-  INDEX idx_g_status (status),
-  INDEX idx_g_giver_recipient (giver_user_id, recipient_user_id),
-  INDEX idx_g_recipient_visibility (recipient_user_id, is_hidden_from_recipient)
-) ENGINE=InnoDB;
+-- 6) (Legacy gifts-tabell er bevisst utelatt.)
 
--- 6b) NEW: Gift orders (en «ordre» per gaveutveksling/plan)
+-- 6b) Gift orders (én rad per gave/plan – inneholder produkt og pris direkte)
 CREATE TABLE IF NOT EXISTS gift_orders (
   id            CHAR(26) PRIMARY KEY,                 -- ULID
   household_id  CHAR(26) NOT NULL,
   event_id      CHAR(26) NULL,                        -- hvilken event ordren hører til
-  title         VARCHAR(200) NULL,                    -- valgfri visningstittel (ellers genereres fra deltakere)
-  order_type    ENUM('outgoing','incoming') NOT NULL DEFAULT 'outgoing',
+  title         VARCHAR(200) NULL,                    -- valgfri visningstittel (ellers genereres)
+  order_type    ENUM('outgoing','incoming') NOT NULL DEFAULT 'outgoing', -- vi gir / vi mottar
+  product_id    CHAR(26) NULL,                        -- hovedprodukt (kan autolages/valgfritt)
+  price         DECIMAL(12,2) NULL,                   -- fri pris (kan forhåndsutfylles fra product.default_price)
+  status        ENUM('idea','reserved','purchased','given','cancelled') NOT NULL DEFAULT 'idea',
   notes         TEXT,
-  status        ENUM('planning','in_progress','completed','cancelled') NOT NULL DEFAULT 'planning',
+  purchased_at  DATETIME NULL,                        -- når kjøpt (hvis relevant)
+  given_at      DATETIME NULL,                        -- når gitt (hvis relevant)
   created_by    CHAR(26) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_go_house FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE,
-  CONSTRAINT fk_go_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL,
-  CONSTRAINT fk_go_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_go_house   FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE,
+  CONSTRAINT fk_go_event   FOREIGN KEY (event_id)     REFERENCES events(id)     ON DELETE SET NULL,
+  CONSTRAINT fk_go_product FOREIGN KEY (product_id)   REFERENCES products(id)   ON DELETE SET NULL,
+  CONSTRAINT fk_go_creator FOREIGN KEY (created_by)   REFERENCES users(id)      ON DELETE SET NULL,
   INDEX idx_go_house (household_id),
   INDEX idx_go_event (event_id),
-  INDEX idx_go_type_status (order_type, status)
+  INDEX idx_go_status (status),
+  INDEX idx_go_type_status (order_type, status),
+  INDEX idx_go_product (product_id)
 ) ENGINE=InnoDB;
 
 -- 6c) Gift order participants (flere givere/mottakere per ordre)
@@ -162,29 +139,6 @@ CREATE TABLE IF NOT EXISTS gift_order_participants (
   CONSTRAINT fk_gop_user  FOREIGN KEY (user_id)  REFERENCES users(id)       ON DELETE CASCADE,
   INDEX idx_gop_order_role (order_id, role),
   INDEX idx_gop_user (user_id)
-) ENGINE=InnoDB;
-
--- 6d) Gift items (linjer/varer under en ordre)
-CREATE TABLE IF NOT EXISTS gift_items (
-  id              CHAR(26) PRIMARY KEY,
-  order_id        CHAR(26) NOT NULL,
-  product_id      CHAR(26) NULL,                      -- hovedprodukt (kan autolages)
-  title           VARCHAR(200) NOT NULL,              -- visningsnavn; speiler typisk products.name
-  notes           TEXT,
-  status          ENUM('idea','reserved','purchased','given','cancelled') NOT NULL DEFAULT 'idea',
-  planned_price   DECIMAL(12,2) NULL,
-  purchase_price  DECIMAL(12,2) NULL,
-  currency_code   CHAR(3) NOT NULL DEFAULT 'NOK',
-  purchased_at    DATETIME NULL,
-  given_at        DATETIME NULL,
-  created_by      CHAR(26) NULL,
-  created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_gi_order   FOREIGN KEY (order_id)   REFERENCES gift_orders(id) ON DELETE CASCADE,
-  CONSTRAINT fk_gi_product FOREIGN KEY (product_id) REFERENCES products(id)    ON DELETE SET NULL,
-  CONSTRAINT fk_gi_creator FOREIGN KEY (created_by) REFERENCES users(id)       ON DELETE SET NULL,
-  INDEX idx_gi_order (order_id),
-  INDEX idx_gi_status (status)
 ) ENGINE=InnoDB;
 
 -- 7) Wishlist items (scoped to household)

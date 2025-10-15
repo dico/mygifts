@@ -1,3 +1,4 @@
+<!-- src/public/app/templates/product_detail.jsr -->
 <div class="mb-3 d-flex align-items-center justify-content-between">
   <a href="/app/products" class="btn btn-sm btn-light">&larr; Back to Products</a>
 </div>
@@ -22,9 +23,29 @@
             {{if product.description}}
               <p class="card-text text-muted mb-2">{{:product.description}}</p>
             {{/if}}
+
+            <!-- Alle lenker -->
+            {{if product.links && product.links.length}}
+              <div class="mb-2">
+                <div class="small text-muted mb-1">Links</div>
+                <ul class="small mb-0">
+                  {{for product.links}}
+                    {{if #data}}
+                      <li><a href="{{:#data}}" target="_blank" rel="noopener">{{:#data}}</a></li>
+                    {{/if}}
+                  {{/for}}
+                </ul>
+              </div>
+            {{else}}
+              {{if product.url}}
+                <div class="small text-muted mb-2">
+                  <a class="small" href="{{:product.url}}" target="_blank" rel="noopener">Product link ↗</a>
+                </div>
+              {{/if}}
+            {{/if}}
+
             <div class="small text-muted">
-              {{if product.url}}<a class="small" href="{{:product.url}}" target="_blank" rel="noopener">Product link ↗</a>{{/if}}
-              {{if product.default_price}} {{if product.url}} · {{/if}}Default: {{:product.default_price}} {{:product.currency_code||'NOK'}}{{/if}}
+              {{if product.default_price}}Default: {{:product.default_price}} {{:product.currency_code||'NOK'}}{{/if}}
             </div>
           </div>
         </div>

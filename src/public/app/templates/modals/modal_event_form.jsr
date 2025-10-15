@@ -1,30 +1,31 @@
-<div class="modal-header">
-  <h5 class="modal-title">{{:title}}</h5>
-  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
+<!-- src/public/app/templates/modals/modal_event_form.jsr -->
+<form id="eventForm"
+      action="{{:action || '/api/events'}}"
+      data-method="{{:method || 'POST'}}"
+      data-send="json">
 
-<div class="modal-body">
-  <form id="eventForm"
-        action="{{:action}}"
-        data-method="{{:method}}"
-        data-send="json">
+  <div class="modal-header">
+    <h5 class="modal-title">{{:title}}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
 
+  <div class="modal-body">
     <div class="mb-3">
       <label class="form-label">Title</label>
-      <input name="name" type="text" class="form-control" value="{{:event.name}}" required>
+      <input name="name" type="text" class="form-control" value="{{:(event && event.name) || ''}}" required autofocus>
     </div>
 
     <div class="row">
       <div class="col-md-6 mb-3">
         <label class="form-label">Date</label>
-        <input name="event_date" type="date" class="form-control" value="{{:event.event_date}}">
+        <input name="event_date" type="date" class="form-control" value="{{:(event && event.event_date) || ''}}">
       </div>
       <div class="col-md-6 mb-3">
         <label class="form-label">Type</label>
         <select name="event_type" class="form-select">
-          <option value="christmas" {{if event.event_type === 'christmas'}}selected{{/if}}>Christmas</option>
-          <option value="birthday"  {{if event.event_type === 'birthday'}}selected{{/if}}>Birthday</option>
-          <option value="other"     {{if !event.event_type || event.event_type === 'other'}}selected{{/if}}>Other</option>
+          <option value="christmas" {{if event && event.event_type === 'christmas'}}selected{{/if}}>Christmas</option>
+          <option value="birthday"  {{if event && event.event_type === 'birthday'}}selected{{/if}}>Birthday</option>
+          <option value="other"     {{if !event || event.event_type === 'other'}}selected{{/if}}>Other</option>
         </select>
       </div>
     </div>
@@ -33,10 +34,9 @@
       <label class="form-label">Honoree (optional)</label>
       <select name="honoree_user_id" class="form-select">
         <option value="">— None —</option>
-        {{for members.users}}
-          <option value="{{:id}}"
-                  {{if ~root.event && ~root.event.honoree_user_id === id}}selected{{/if}}>
-            {{:display_name}}
+        {{for members && members.users}}
+          <option value="{{:id}}" {{if ~root.event && ~root.event.honoree_user_id === id}}selected{{/if}}>
+            {{:display_name || ((firstname||'')+' '+(lastname||'')).trim() || email || 'User'}}
           </option>
         {{/for}}
       </select>
@@ -44,13 +44,13 @@
 
     <div class="mb-3">
       <label class="form-label">Notes</label>
-      <textarea name="notes" class="form-control" rows="3">{{:event.notes}}</textarea>
+      <textarea name="notes" class="form-control" rows="3">{{:(event && event.notes) || ''}}</textarea>
     </div>
 
     <div class="error-message d-none"></div>
-  </form>
-</div>
+  </div>
 
-<div class="modal-footer">
-  <button type="submit" form="eventForm" class="btn btn-primary">{{:submitLabel}}</button>
-</div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary">{{:submitLabel}}</button>
+  </div>
+</form>
