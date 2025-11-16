@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   id                   CHAR(26) PRIMARY KEY,          -- ULID
   firstname            VARCHAR(120) NOT NULL,
   lastname             VARCHAR(120) NOT NULL,
+  display_name         VARCHAR(160) NULL,             -- valgfritt visningsnavn
   email                VARCHAR(254) NULL,             -- globally unique if provided (NULL allowed)
   mobile               VARCHAR(30) NULL,
   profile_image_url    VARCHAR(500) NULL,             -- optional avatar/profile image
@@ -190,4 +191,47 @@ CREATE TABLE IF NOT EXISTS settings (
   CONSTRAINT fk_set_house FOREIGN KEY (household_id)       REFERENCES households(id) ON DELETE CASCADE,
   CONSTRAINT fk_set_user  FOREIGN KEY (updated_by_user_id) REFERENCES users(id)      ON DELETE SET NULL,
   UNIQUE KEY uq_settings (household_id, `key`)
+) ENGINE=InnoDB;
+
+-- 10) Gift Templates (scoped to household)
+CREATE TABLE IF NOT EXISTS gift_templates (
+  id            CHAR(26) PRIMARY KEY,
+  household_id  CHAR(26) NOT NULL,
+  name          VARCHAR(160) NOT NULL,         -- e.g. "Christmas gifts", "Birthday rotation"
+  description   TEXT,                          -- optional notes about the template
+  created_by    CHAR(26) NOT NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_gt_house   FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE,
+  CONSTRAINT fk_gt_creator FOREIGN KEY (created_by)   REFERENCES users(id)      ON DELETE RESTRICT,
+  INDEX idx_gt_house (household_id)
+) ENGINE=InnoDB;
+
+-- 10b) Gift Template Items (giver → recipient relationships)
+CREATE TABLE IF NOT EXISTS gift_template_items (
+  id           CHAR(26) PRIMARY KEY,
+  template_id  CHAR(26) NOT NULL,
+  giver_id     CHAR(26) NULL,                  -- Legacy: kept for backward compatibility, nullable for new items
+  recipient_id CHAR(26) NULL,                  -- Legacy: kept for backward compatibility, nullable for new items
+  notes        TEXT,                           -- optional notes for this relationship
+  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_gti_template  FOREIGN KEY (template_id)  REFERENCES gift_templates(id) ON DELETE CASCADE,
+  CONSTRAINT fk_gti_giver     FOREIGN KEY (giver_id)     REFERENCES users(id)          ON DELETE CASCADE,
+  CONSTRAINT fk_gti_recipient FOREIGN KEY (recipient_id) REFERENCES users(id)          ON DELETE CASCADE,
+  INDEX idx_gti_template (template_id),
+  INDEX idx_gti_giver (giver_id),
+  INDEX idx_gti_recipient (recipient_id)
+) ENGINE=InnoDB;
+
+-- 10c) Gift Template Item Participants (supports multiple givers/recipients per item)
+CREATE TABLE IF NOT EXISTS gift_template_item_participants (
+  item_id     CHAR(26) NOT NULL,
+  user_id     CHAR(26) NOT NULL,
+  role        ENUM('giver','recipient') NOT NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (item_id, user_id, role),
+  CONSTRAINT fk_gtip_item FOREIGN KEY (item_id) REFERENCES gift_template_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_gtip_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_gtip_item (item_id),
+  INDEX idx_gtip_user (user_id)
 ) ENGINE=InnoDB;

@@ -1,11 +1,12 @@
 <!-- src/public/app/templates/people.jsr -->
-<div class="page-people">
-  <div class="toolbar">
-    <h5 class="mb-0">{{:title}}</h5>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title mb-0">{{:title}}</h2>
 
     <!-- New user (ModalMini) -->
     <button
-      class="btn btn-primary"
+      class="btn-icon--primary"
+      title="New user"
+      aria-label="New user"
       data-mm="open"
       data-mm-template="modals/modal_user_form"
       data-mm-title="New user"
@@ -29,123 +30,137 @@
       type="button"
     >
       <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
-      <span class="btn-label">New user</span>
     </button>
+</div>
+
+<p class="text-muted mb-3">{{:intro}}</p>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading people…</div>
   </div>
+{{else}}
+  {{if users && users.length}}
+    <div class="stack-md">
+      {{for users}}
+        <div class="item-row item-row--person">
+          <!-- Avatar (click to change) -->
+          <div class="item-row__figure">
+            <button
+              class="avatar-btn"
+              title="Change photo"
+              aria-label="Change photo for {{:display_name}}"
+              data-mm="open"
+              data-mm-template="modals/modal_user_avatar"
+              data-mm-title="Change photo"
+              data-mm-sources='[
+                {"key":"user","url":"/api/users/{id}","path":"user"}
+              ]'
+              data-id="{{:id}}"
+              type="button"
+            >
+              {{if profile_image_url}}
+                <span class="avatar avatar--sm avatar-clickable">
+                  <img
+                    src="{{:profile_image_url}}"
+                    alt="{{:display_name}}"
+                    loading="lazy"
+                    decoding="async"
+                    width="40"
+                    height="40"
+                  >
+                </span>
+              {{else}}
+                <span class="avatar avatar--sm avatar-clickable" data-initials="{{:(display_name || 'U').slice(0,2)}}"></span>
+              {{/if}}
+            </button>
+          </div>
 
-  <p class="text-muted mb-3">{{:intro}}</p>
-
-  {{if loading}}
-    <div class="text-center my-4">
-      <div class="spinner-border" role="status"></div>
-      <div class="text-muted mt-2">Loading people…</div>
-    </div>
-  {{else}}
-    {{if users && users.length}}
-      <div class="stack-md">
-        {{for users}}
-          <div class="item-row item-row--person">
-            <!-- Avatar (click to change) -->
-            <div class="item-row__figure">
-              <button
-                class="avatar-btn"
-                title="Change photo"
-                aria-label="Change photo for {{:display_name}}"
-                data-mm="open"
-                data-mm-template="modals/modal_user_avatar"
-                data-mm-title="Change photo"
-                data-mm-sources='[
-                  {"key":"user","url":"/api/users/{id}","path":"user"}
-                ]'
-                data-id="{{:id}}"
-                type="button"
-              >
-                {{if profile_image_url}}
-                  <span class="avatar avatar--sm avatar-clickable">
-                    <img
-                      src="{{:profile_image_url}}"
-                      alt="{{:display_name}}"
-                      loading="lazy"
-                      decoding="async"
-                      width="40"
-                      height="40"
-                    >
-                  </span>
-                {{else}}
-                  <span class="avatar avatar--sm avatar-clickable" data-initials="{{:(display_name || 'U').slice(0,2)}}"></span>
-                {{/if}}
-              </button>
+          <!-- Main -->
+          <div class="item-row__main">
+            <div class="fw-semibold text-truncate-1">
+              <a href="#" data-link-user="{{:id}}">
+                {{:firstname}} {{:lastname}}
+              </a>
             </div>
 
-            <!-- Main -->
-            <div class="item-row__main">
-              <div class="fw-semibold text-truncate-1">
-                <a href="#" data-link-user="{{:id}}">{{:display_name}}</a>
-              </div>
+            <!-- Tags always under name -->
+            <div class="item-row__tags" style="margin-top:6px; font-size:0.75rem;">
+              {{if is_family_member}}
+                <span class="badge rounded-pill bg-info">Family</span>
+              {{else}}
+                <span class="badge rounded-pill bg-secondary">Contact</span>
+              {{/if}}
+              {{if is_manager}}
+                <span class="badge rounded-pill bg-warning text-dark">Manager</span>
+              {{/if}}
 
-              <!-- Tags always under name -->
-              <div class="item-row__tags">
-                {{if is_family_member}}
-                  <span class="badge rounded-pill bg-info">Family</span>
-                {{else}}
-                  <span class="badge rounded-pill bg-secondary">Contact</span>
-                {{/if}}
-                {{if is_manager}}
-                  <span class="badge rounded-pill bg-warning text-dark">Manager</span>
-                {{/if}}
-              </div>
-
-              <div class="item-row__meta">
-                {{if email}}<span class="text-truncate-1">{{:email}}</span>{{/if}}
-                {{if (email && mobile)}} · {{/if}}
-                {{if mobile}}<span class="text-truncate-1">{{:mobile}}</span>{{/if}}
-              </div>
+              <span class="text-muted" style="font-size:0.7rem; margin-left:6px;">Kallenavn: {{>display_name}}</span>
             </div>
 
-            <!-- Actions (ikonrunde, diskrete – iOS-aktig) -->
-            <div class="item-row__actions">
-              <!-- Edit user -->
-              <button
-                class="btn-icon"
-                title="Edit user"
-                aria-label="Edit user"
-                data-mm="open"
-                data-mm-template="modals/modal_user_form"
-                data-mm-title="Edit user"
-                data-mm-submit-label="Save changes"
-                data-mm-method="PATCH"
-                data-mm-sources='[
-                  {"key":"user","url":"/api/users/{id}","path":"user"}
-                ]'
-                data-mm-form-id="userForm"
-                data-mm-emit-entity="user"
-                data-id="{{:id}}"
-                type="button"
-              >
-                <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                <span class="visually-hidden">Edit</span>
-              </button>
-
-              <!-- Delete user -->
-              <button
-                class="btn-icon btn-icon--danger"
-                title="Delete user"
-                aria-label="Delete user"
-                data-delete="user"
-                data-id="{{:id}}"
-                type="button"
-              >
-                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                <span class="visually-hidden">Delete</span>
-              </button>
+            <div class="item-row__meta">
+              {{if email}}<span class="text-truncate-1">{{:email}}</span>{{/if}}
+              {{if (email && mobile)}} · {{/if}}
+              {{if mobile}}<span class="text-truncate-1">{{:mobile}}</span>{{/if}}
             </div>
           </div>
-        {{/for}}
-      </div>
-    {{else}}
-      <div class="alert alert-light border mt-3" role="alert">
-        No users yet. Click <strong>New user</strong> to add someone.
-      </div>
-    {{/if}}
+
+          <!-- Actions -->
+          <div class="item-row__actions">
+            <div class="dropdown">
+              <button
+                class="btn-icon"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                title="Actions"
+                aria-label="Actions"
+              >
+                <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button
+                    class="dropdown-item"
+                    data-mm="open"
+                    data-mm-template="modals/modal_user_form"
+                    data-mm-title="Edit user"
+                    data-mm-submit-label="Save changes"
+                    data-mm-method="PATCH"
+                    data-mm-sources='[
+                      {"key":"user","url":"/api/users/{id}","path":"user"}
+                    ]'
+                    data-mm-form-id="userForm"
+                    data-mm-emit-entity="user"
+                    data-id="{{:id}}"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
+                    Edit
+                  </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <button
+                    class="dropdown-item text-danger"
+                    data-delete="user"
+                    data-id="{{:id}}"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
+                    Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      {{/for}}
+    </div>
+  {{else}}
+    <div class="alert alert-light border mt-3" role="alert">
+      No users yet. Click <strong>New user</strong> to add someone.
+    </div>
   {{/if}}
-</div>
+{{/if}}

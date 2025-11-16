@@ -31,7 +31,9 @@ class UrlInspector
         'norli.no'         => 'Norli',
         'adlibris.com'     => 'Adlibris',
         'tek.no'           => 'Tek.no',
-        'megaflis.no'           => 'Megaflis.no',
+        'megaflis.no'      => 'Megaflis.no',
+        'dustinhome.no'    => 'DustinHome',
+        'proshop.no'       => 'Proshop.no',
 
         // Internasjonale / wildcard
         'amazon.'          => 'Amazon',   // amazon.no / .com / .de ...

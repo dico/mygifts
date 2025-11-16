@@ -46,7 +46,7 @@ class AuthModel
 
     /**
      * Sørger for at lokal user + oauth-identity finnes. Returnerer user_id (ULID).
-     * Matcher KUN på (provider, sub) – ikke e-post.
+     * Matcher FØRST på (provider, sub), deretter på e-post hvis identity mangler.
      */
     public function ensureLocalUser(string $providerSub, ?string $email): string
     {
@@ -59,7 +59,7 @@ class AuthModel
             throw new \InvalidArgumentException('Missing Keycloak subject (sub)');
         }
 
-        // 1) Finn eksisterende identity
+        // 1) Finn eksisterende identity basert på provider + sub
         $identity = DB::table('oauth_identities')
             ->where('provider', 'keycloak')
             ->where('provider_user_id', $providerSub)
@@ -113,7 +113,47 @@ class AuthModel
             return (string)$identity->user_id;
         }
 
-        // 2) Opprett bruker (første innlogging uten identity)
+        // 2) Ingen identity funnet. Sjekk om bruker med denne e-posten allerede finnes
+        //    (f.eks. lagt til manuelt av admin via People-listen)
+        $existingUser = null;
+        if ($email) {
+            $existingUser = DB::table('users')
+                ->where('email', $email)
+                ->first();
+
+            if ($existingUser) {
+                error_log('[ensureLocalUser] Found existing user by email=' . $email . ' userId=' . $existingUser->id);
+                // Link denne brukeren til Keycloak-identiteten
+                $userId = (string)$existingUser->id;
+
+                try {
+                    $oid = Id::ulid();
+                    error_log('[ensureLocalUser] Creating oauth_identity for existing user id=' . $oid);
+
+                    DB::table('oauth_identities')->insert([
+                        'id'               => $oid,
+                        'user_id'          => $userId,
+                        'provider'         => 'keycloak',
+                        'provider_user_id' => $providerSub,
+                        'realm'            => null,
+                        'email'            => $email,
+                        'claims_json'      => null,
+                        'last_login_at'    => DB::raw('CURRENT_TIMESTAMP'),
+                        'created_at'       => DB::raw('CURRENT_TIMESTAMP'),
+                        'updated_at'       => DB::raw('CURRENT_TIMESTAMP'),
+                    ]);
+
+                    error_log('[ensureLocalUser] Linked existing user to Keycloak identity');
+                } catch (\Throwable $e) {
+                    error_log('[ensureLocalUser] Failed to create identity for existing user: ' . $e->getMessage());
+                    throw $e;
+                }
+
+                return $userId;
+            }
+        }
+
+        // 3) Ingen bruker funnet - opprett ny bruker (første innlogging uten identity)
         $userId    = Id::ulid();
         $firstname = 'User';
         $lastname  = '';
@@ -148,7 +188,7 @@ class AuthModel
             throw $e;
         }
 
-        // 3) Opprett oauth-identity
+        // 4) Opprett oauth-identity for ny bruker
         try {
             $oid = Id::ulid();
             error_log('[ensureLocalUser] INSERT oauth_identities id=' . $oid . ' for userId=' . $userId);
@@ -208,6 +248,22 @@ class AuthModel
                 'is_manager'       => (bool)$row->is_manager,
             ])
             ->toArray();
+
+        // Auto-set active_household_id hvis brukeren ikke har en og har medlemskap
+        if (empty($u->active_household_id) && !empty($memberships)) {
+            $firstHouseholdId = $memberships[0]['household_id'];
+            error_log('[buildProfilePayload] Auto-setting active_household_id=' . $firstHouseholdId . ' for userId=' . $userId);
+
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'active_household_id' => $firstHouseholdId,
+                    'updated_at' => DB::raw('CURRENT_TIMESTAMP'),
+                ]);
+
+            // Oppdater $u objektet med ny verdi
+            $u->active_household_id = $firstHouseholdId;
+        }
 
         return [
             'user_id'             => $userId,

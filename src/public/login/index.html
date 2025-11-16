@@ -115,7 +115,10 @@
     if (tokens.refresh_token)  localStorage.setItem('refresh_token', tokens.refresh_token);
     if (tokens.id_token)       localStorage.setItem('id_token', tokens.id_token);
 
-    // 7) Fjern ?code for å unngå rebruk ved refresh og gå tilbake til ruten
+    // 7) Sett flagg for å indikere at vi nettopp logget inn
+    sessionStorage.setItem('just_logged_in', Date.now().toString());
+
+    // 8) Fjern ?code for å unngå rebruk ved refresh og gå tilbake til ruten
     try { history.replaceState(null, '', REDIRECT_URI); } catch {}
 
     const ret = sessionStorage.getItem('returnTo');

@@ -12,9 +12,32 @@ final class Tenant
         Database::init();
 
         $hid = DB::table('users')->where('id', $userId)->value('active_household_id');
+
+        // Fallback: Auto-set active_household_id hvis brukeren ikke har en, men har medlemskap
+        if (!$hid) {
+            $firstMembership = DB::table('household_members')
+                ->where('user_id', $userId)
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if ($firstMembership) {
+                error_log('[Tenant] Auto-setting active_household_id=' . $firstMembership->household_id . ' for userId=' . $userId);
+
+                DB::table('users')
+                    ->where('id', $userId)
+                    ->update([
+                        'active_household_id' => $firstMembership->household_id,
+                        'updated_at' => DB::raw('CURRENT_TIMESTAMP'),
+                    ]);
+
+                $hid = $firstMembership->household_id;
+            }
+        }
+
         if (!$hid) {
             throw new \RuntimeException('No active household/tenant', 403);
         }
+
         return (string)$hid;
     }
 

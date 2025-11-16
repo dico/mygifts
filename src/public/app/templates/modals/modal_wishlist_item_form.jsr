@@ -1,15 +1,10 @@
 <!-- src/public/app/templates/modals/modal_wishlist_item_form.jsr -->
 <div class="modal-header">
-  <h5 class="modal-title">{{:title || (item && item.id ? 'Edit wish' : 'Add wish')}}</h5>
+  <h5 class="modal-title">{{:(title && title.substring) ? title : (item && item.id ? 'Edit wish' : 'Add wish')}}</h5>
   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
-  <!-- Sikre at item alltid finnes -->
-  {{if !item}}
-    {{:~root.item = {}}}
-  {{/if}}
-
   <form id="wishlistForm"
         action="{{:action || '/api/wishlists'}}"
         data-method="{{:method || (item && item.id ? 'PATCH' : 'POST')}}"

@@ -1,57 +1,65 @@
-<!-- src/public/app/templates/event_detail.jsr -->
 <h2 class="page-title mb-3">{{:title}}</h2>
 
 {{if event}}
-  <div class="toolbar">
-    <div></div>
-    <div class="d-flex gap-2">
-      <!-- New gift -->
-      <button
-        type="button"
-        class="btn btn-primary"
-        data-mm="open"
-        data-mm-template="modals/modal_gift_form"
-        data-mm-title="Add gift"
-        data-mm-submit-label="Create gift"
-        data-mm-action="/api/gift-orders"
-        data-mm-method="POST"
-        data-mm-sources='[
-          {"key":"event","url":"/api/events/{event_id}"},
-          {"key":"members","url":"/api/users"}
-        ]'
-        data-mm-emit-entity="order"
-        data-mm-emit-id-path="data.gift_order_id"
-        data-event-id="{{:event.id}}"
-      >
-        <i class="fa-solid fa-gift" aria-hidden="true"></i>
-        <span class="btn-label">Add gift</span>
-      </button>
+  <div class="d-flex justify-content-end gap-2 mb-3">
+    <!-- Import from template -->
+    <button
+      type="button"
+      class="btn-icon--primary"
+      id="importTemplateBtn"
+      title="Import from Template"
+      aria-label="Import from Template"
+    >
+      <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+    </button>
 
-      <button
-        type="button"
-        class="btn btn-outline-secondary"
-        data-mm="open"
-        data-mm-template="modals/modal_event_form"
-        data-mm-title="Edit event"
-        data-mm-submit-label="Save"
-        data-mm-action="/api/events/{id}"
-        data-mm-method="PATCH"
-        data-mm-sources='[
-          {"key":"event","url":"/api/events/{id}"},
-          {"key":"members","url":"/api/users"}
-        ]'
-        data-mm-emit-entity="event"
-        data-id="{{:event.id}}"
-      >
-        <i class="fa-solid fa-pen" aria-hidden="true"></i>
-        <span class="btn-label">Edit event</span>
-      </button>
+    <!-- New gift -->
+    <button
+      type="button"
+      class="btn-icon--primary"
+      title="Add gift"
+      aria-label="Add gift"
+      data-mm="open"
+      data-mm-template="modals/modal_gift_form"
+      data-mm-title="Add gift"
+      data-mm-submit-label="Create gift"
+      data-mm-action="/api/gift-orders"
+      data-mm-method="POST"
+      data-mm-sources='[
+        {"key":"event","url":"/api/events/{event_id}"},
+        {"key":"members","url":"/api/users"}
+      ]'
+      data-mm-emit-entity="order"
+      data-mm-emit-id-path="data.gift_order_id"
+      data-event-id="{{:event.id}}"
+    >
+      <i class="fa-solid fa-gift" aria-hidden="true"></i>
+    </button>
 
-      <a class="btn btn-light" href="/app/events">
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        <span class="btn-label">Back to events</span>
-      </a>
-    </div>
+    <button
+      type="button"
+      class="btn-icon--glass"
+      title="Edit event"
+      aria-label="Edit event"
+      data-mm="open"
+      data-mm-template="modals/modal_event_form"
+      data-mm-title="Edit event"
+      data-mm-submit-label="Save"
+      data-mm-action="/api/events/{id}"
+      data-mm-method="PATCH"
+      data-mm-sources='[
+        {"key":"event","url":"/api/events/{id}"},
+        {"key":"members","url":"/api/users"}
+      ]'
+      data-mm-emit-entity="event"
+      data-id="{{:event.id}}"
+    >
+      <i class="fa-solid fa-pen" aria-hidden="true"></i>
+    </button>
+
+    <a class="btn-icon--glass" href="/app/events" title="Back to events" aria-label="Back to events">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+    </a>
   </div>
 {{/if}}
 
@@ -62,28 +70,30 @@
   </div>
 {{else}}
 
-  <ul class="nav nav-tabs" id="giftTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button
-        class="nav-link {{if activeTab !== 'received'}}active{{/if}}"
-        id="tabGive"
-        data-bs-toggle="tab"
-        data-bs-target="#paneGive"
-        type="button"
-        role="tab"
-      >Gifts we give</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button
-        class="nav-link {{if activeTab === 'received'}}active{{/if}}"
-        id="tabReceived"
-        data-bs-toggle="tab"
-        data-bs-target="#paneReceived"
-        type="button"
-        role="tab"
-      >Gifts we received</button>
-    </li>
-  </ul>
+  <div class="tabs-container">
+    <ul class="nav nav-tabs nav-fill" id="giftTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link {{if activeTab !== 'received'}}active{{/if}}"
+          id="tabGive"
+          data-bs-toggle="tab"
+          data-bs-target="#paneGive"
+          type="button"
+          role="tab"
+        >Gifts we give</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link {{if activeTab === 'received'}}active{{/if}}"
+          id="tabReceived"
+          data-bs-toggle="tab"
+          data-bs-target="#paneReceived"
+          type="button"
+          role="tab"
+        >Gifts we received</button>
+      </li>
+    </ul>
+  </div>
 
   <div class="tab-content pt-3">
     <!-- We give -->
@@ -94,15 +104,29 @@
             <!-- Group header with toggle -->
             <div class="section-header">
               <div class="section-header__left">
-                {{if user.profile_image_url}}
-                  <span class="avatar avatar--md">
-                    <img src="{{:user.profile_image_url}}" alt="{{:user.display_name}}">
-                  </span>
+                {{!-- Støtter både enkeltperson og sett (user.members) --}}
+                {{if user.members && user.members.length}}
+                  <div class="avatar-stack me-2">
+                    {{for user.members}}
+                      {{if profile_image_url}}
+                        <span class="avatar avatar--sm">
+                          <img src="{{:profile_image_url}}" alt="{{:display_name}}">
+                        </span>
+                      {{else}}
+                        <span class="avatar avatar--sm" data-initials="{{:(initials || (display_name||'U').slice(0,2))}}"></span>
+                      {{/if}}
+                    {{/for}}
+                  </div>
                 {{else}}
-                  <span class="avatar avatar--md" data-initials="{{:(user.initials || (user.display_name||'U').slice(0,2))}}"></span>
+                  {{if user.profile_image_url}}
+                    <span class="avatar avatar--md me-2">
+                      <img src="{{:user.profile_image_url}}" alt="{{:user.display_name}}">
+                    </span>
+                  {{else}}
+                    <span class="avatar avatar--md me-2" data-initials="{{:(user.initials || (user.display_name||'U').slice(0,2))}}"></span>
+                  {{/if}}
                 {{/if}}
 
-                <!-- Toggle-button som ser ut som den gamle tittelen -->
                 <button
                   class="btn-plain toggle-title"
                   type="button"
@@ -117,13 +141,11 @@
               </div>
             </div>
 
-            <!-- Collapsible body (always open by default) -->
             <div id="give-{{:user.id}}" class="collapse show">
               {{if gifts && gifts.length}}
                 <div>
                   {{for gifts}}
                     <div class="item-row item-row--compact item-row--responsive">
-                      <!-- Figure (clickable when product_id) -->
                       <div class="item-row__figure">
                         {{if product_id}}
                           <button
@@ -158,7 +180,6 @@
                         {{/if}}
                       </div>
 
-                      <!-- Main -->
                       <div class="item-row__main">
                         <div class="fw-semibold text-truncate-1">{{:title || product_name || '—'}}</div>
                         <div class="item-row__meta">
@@ -167,7 +188,6 @@
                         </div>
                       </div>
 
-                      <!-- Right: status + (price slot) + actions -->
                       <div class="item-row__actions">
                         <span class="badge rounded-pill {{:status_class}} text-capitalize">{{:status}}</span>
 
@@ -175,50 +195,62 @@
                           {{if price}}<span class="price">{{:price}}</span>{{/if}}
                         </div>
 
-                        <button
-                          type="button"
-                          class="btn-icon"
-                          title="Edit gift"
-                          aria-label="Edit gift"
-                          data-mm="open"
-                          data-mm-template="modals/modal_gift_form"
-                          data-mm-title="Edit gift"
-                          data-mm-submit-label="Save changes"
-                          data-mm-action="/api/gift-orders/{order_id}"
-                          data-mm-method="PATCH"
-                          data-mm-sources='[
-                            {"key":"members","url":"/api/users"},
-                            {"key":"order","url":"/api/gift-orders/{order_id}"}
-                          ]'
-                          data-mm-emit-entity="order"
-                          data-order-id="{{:order_id}}"
-                          data-event-id="{{:event_id}}"
-                        >
-                          <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                          <span class="visually-hidden">Edit</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          class="btn-icon btn-icon--danger"
-                          title="Delete gift"
-                          aria-label="Delete gift"
-                          data-delete="order"
-                          data-id="{{:order_id}}"
-                        >
-                          <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                          <span class="visually-hidden">Delete</span>
-                        </button>
+                        <div class="dropdown">
+                          <button
+                            type="button"
+                            class="btn-icon"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            title="Actions"
+                            aria-label="Actions"
+                          >
+                            <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <button
+                                class="dropdown-item"
+                                data-mm="open"
+                                data-mm-template="modals/modal_gift_form"
+                                data-mm-title="Edit gift"
+                                data-mm-submit-label="Save changes"
+                                data-mm-action="/api/gift-orders/{order_id}"
+                                data-mm-method="PATCH"
+                                data-mm-sources='[
+                                  {"key":"members","url":"/api/users"},
+                                  {"key":"order","url":"/api/gift-orders/{order_id}"}
+                                ]'
+                                data-mm-emit-entity="order"
+                                data-order-id="{{:order_id}}"
+                                data-event-id="{{:event_id}}"
+                                type="button"
+                              >
+                                <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
+                                Edit
+                              </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                              <button
+                                class="dropdown-item text-danger"
+                                data-delete="order"
+                                data-id="{{:order_id}}"
+                                type="button"
+                              >
+                                <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   {{/for}}
                 </div>
               {{else}}
-                <div class="empty">No gifts yet.</div>
+                <div class="text-muted">No gifts yet.</div>
               {{/if}}
             </div>
-
-            <div class="divider"></div>
           {{/for}}
         </div>
       {{else}}
@@ -231,17 +263,31 @@
       {{if receivedGroups && receivedGroups.length}}
         <div class="stack-lg">
           {{for receivedGroups}}
-            <div class="section-header d-flex justify-content-between align-items-center">
+            <div class="section-header">
               <div class="section-header__left">
-                {{if user.profile_image_url}}
-                  <span class="avatar avatar--md">
-                    <img src="{{:user.profile_image_url}}" alt="{{:user.display_name}}">
-                  </span>
+                {{!-- Avatar: stack for set-grupper --}}
+                {{if user.members && user.members.length}}
+                  <div class="avatar-stack me-2">
+                    {{for user.members}}
+                      {{if profile_image_url}}
+                        <span class="avatar avatar--sm">
+                          <img src="{{:profile_image_url}}" alt="{{:display_name}}">
+                        </span>
+                      {{else}}
+                        <span class="avatar avatar--sm" data-initials="{{:(initials || (display_name||'U').slice(0,2))}}"></span>
+                      {{/if}}
+                    {{/for}}
+                  </div>
                 {{else}}
-                  <span class="avatar avatar--md" data-initials="{{:(user.initials || (user.display_name||'U').slice(0,2))}}"></span>
+                  {{if user.profile_image_url}}
+                    <span class="avatar avatar--md me-2">
+                      <img src="{{:user.profile_image_url}}" alt="{{:user.display_name}}">
+                    </span>
+                  {{else}}
+                    <span class="avatar avatar--md me-2" data-initials="{{:(user.initials || (user.display_name||'U').slice(0,2))}}"></span>
+                  {{/if}}
                 {{/if}}
 
-                <!-- Toggle-button på navn -->
                 <button
                   class="btn-plain toggle-title"
                   type="button"
@@ -250,15 +296,16 @@
                   aria-expanded="true"
                   aria-controls="recv-{{:user.id}}"
                 >
-                  <span class="section-title mb-0">{{:user.display_name}}</span>
+                  <span class="section-title">{{:user.display_name}}</span>
                   <i class="fa-solid fa-chevron-down chev" aria-hidden="true"></i>
                 </button>
               </div>
 
               <button
                 type="button"
-                class="btn btn-sm btn-outline-primary"
+                class="btn-icon--primary"
                 title="Add gift for {{:user.display_name}}"
+                aria-label="Add gift for {{:user.display_name}}"
                 data-mm="open"
                 data-mm-template="modals/modal_gift_form"
                 data-mm-title="Add gift"
@@ -281,7 +328,6 @@
                 }'
               >
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span class="btn-label">Add</span>
               </button>
             </div>
 
@@ -290,7 +336,6 @@
                 <div>
                   {{for gifts}}
                     <div class="item-row item-row--compact item-row--responsive">
-                      <!-- Figure (clickable when product_id) -->
                       <div class="item-row__figure">
                         {{if product_id}}
                           <button
@@ -325,7 +370,6 @@
                         {{/if}}
                       </div>
 
-                      <!-- Main -->
                       <div class="item-row__main">
                         <div class="fw-semibold text-truncate-1">{{:title || product_name || '—'}}</div>
                         <div class="item-row__meta">
@@ -334,7 +378,6 @@
                         </div>
                       </div>
 
-                      <!-- Right: status + (price slot) + actions -->
                       <div class="item-row__actions">
                         <span class="badge rounded-pill {{:status_class}} text-capitalize">{{:status}}</span>
 
@@ -342,55 +385,83 @@
                           {{if price}}<span class="price">{{:price}}</span>{{/if}}
                         </div>
 
-                        <button
-                          type="button"
-                          class="btn-icon"
-                          title="Edit gift"
-                          aria-label="Edit gift"
-                          data-mm="open"
-                          data-mm-template="modals/modal_gift_form"
-                          data-mm-title="Edit gift"
-                          data-mm-submit-label="Save changes"
-                          data-mm-action="/api/gift-orders/{order_id}"
-                          data-mm-method="PATCH"
-                          data-mm-sources='[
-                            {"key":"members","url":"/api/users"},
-                            {"key":"order","url":"/api/gift-orders/{order_id}"}
-                          ]'
-                          data-mm-emit-entity="order"
-                          data-order-id="{{:order_id}}"
-                          data-event-id="{{:event_id}}"
-                        >
-                          <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                          <span class="visually-hidden">Edit</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          class="btn-icon btn-icon--danger"
-                          title="Delete gift"
-                          aria-label="Delete gift"
-                          data-delete="order"
-                          data-id="{{:order_id}}"
-                        >
-                          <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                          <span class="visually-hidden">Delete</span>
-                        </button>
+                        <div class="dropdown">
+                          <button
+                            type="button"
+                            class="btn-icon"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            title="Actions"
+                            aria-label="Actions"
+                          >
+                            <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <button
+                                class="dropdown-item"
+                                data-mm="open"
+                                data-mm-template="modals/modal_gift_form"
+                                data-mm-title="Edit gift"
+                                data-mm-submit-label="Save changes"
+                                data-mm-action="/api/gift-orders/{order_id}"
+                                data-mm-method="PATCH"
+                                data-mm-sources='[
+                                  {"key":"members","url":"/api/users"},
+                                  {"key":"order","url":"/api/gift-orders/{order_id}"}
+                                ]'
+                                data-mm-emit-entity="order"
+                                data-order-id="{{:order_id}}"
+                                data-event-id="{{:event_id}}"
+                                type="button"
+                              >
+                                <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
+                                Edit
+                              </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                              <button
+                                class="dropdown-item text-danger"
+                                data-delete="order"
+                                data-id="{{:order_id}}"
+                                type="button"
+                              >
+                                <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   {{/for}}
                 </div>
               {{else}}
-                <div class="empty">—</div>
+                <div class="text-muted">—</div>
               {{/if}}
             </div>
-
-            <div class="divider"></div>
           {{/for}}
         </div>
       {{else}}
         <div class="text-muted">No received gifts registered.</div>
       {{/if}}
+    </div>
+  </div>
+
+  <!-- Delete event section -->
+  <div class="mt-5 pt-4 border-top" style="border-color: rgba(255, 255, 255, 0.1) !important;">
+    <div class="text-center">
+      <p class="text-muted small mb-3">Delete this gift list permanently</p>
+      <button
+        type="button"
+        class="btn btn-danger"
+        data-delete="event"
+        data-id="{{:event.id}}"
+      >
+        <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
+        Delete Gift List
+      </button>
     </div>
   </div>
 {{/if}}

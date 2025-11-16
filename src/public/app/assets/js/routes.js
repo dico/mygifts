@@ -69,6 +69,27 @@ export function setupRoutes() {
     await mod.mount(ctx.params.id);
     setCleanup(() => mod.unmount?.(), 'product-detail');
   });
+
+  p('/app/settings', async () => {
+    runCleanup();
+    const mod = await import('/app/assets/js/pages/settings.js');
+    await mod.mount();
+    setCleanup(() => mod.unmount?.(), 'settings');
+  });
+
+  p('/app/settings/templates', async () => {
+    runCleanup();
+    const mod = await import('/app/assets/js/pages/templates.js');
+    await mod.mount();
+    setCleanup(() => mod.unmount?.(), 'templates');
+  });
+
+  p('/app/settings/templates/:id', async (ctx) => {
+    runCleanup();
+    const mod = await import('/app/assets/js/pages/template_detail.js');
+    await mod.mount(ctx.params.id);
+    setCleanup(() => mod.unmount?.(), 'template-detail');
+  });
 }
 
 export function startRouter() {

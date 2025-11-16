@@ -21,7 +21,7 @@ class UsersModel
         return ($v === '') ? null : $v;
     }
 
-    /** Lag visningsnavn */
+    /** Lag visningsnavn fra fn/ln/email (fallback) */
     private function displayName(?string $firstname, ?string $lastname, ?string $email): string
     {
         $fn = trim((string)$firstname);
@@ -85,14 +85,28 @@ class UsersModel
             ->orderBy('u.firstname', 'asc')
             ->orderBy('u.lastname', 'asc')
             ->select(
-                'u.id','u.firstname','u.lastname','u.email','u.mobile',
+                'u.id','u.firstname','u.lastname','u.display_name','u.email','u.mobile',
                 'u.profile_image_url',
                 'hm.is_family_member','hm.is_manager'
             )
             ->get();
 
         return $rows->map(function ($r) {
-            $display = $this->displayName($r->firstname ?? '', $r->lastname ?? '', $r->email ?? null);
+            // velg eksplisitt display_name hvis satt, ellers fallback
+            $explicit = trim((string)($r->display_name ?? ''));
+            $fallback = $this->displayName($r->firstname ?? '', $r->lastname ?? '', $r->email ?? null);
+            $display  = $explicit !== '' ? $explicit : $fallback;
+
+            // initialer fra display_name (to første tokens)
+            $initialsFromDisplay = function (string $name): string {
+                $parts = preg_split('/\s+/', trim($name)) ?: [];
+                $take  = fn($s) => $s !== '' ? mb_strtoupper(mb_substr($s, 0, 1)) : '';
+                if (count($parts) === 0) return '•';
+                $a = $take($parts[0]);
+                $b = $take($parts[1] ?? '');
+                return ($a.$b) !== '' ? ($a.$b) : '•';
+            };
+
             return [
                 'id'                 => (string)$r->id,
                 'display_name'       => $display,
@@ -101,11 +115,12 @@ class UsersModel
                 'email'              => $r->email,
                 'mobile'             => $r->mobile,
                 'profile_image_url'  => $r->profile_image_url,
-                'initials'           => $this->initials($r->firstname ?? '', $r->lastname ?? '', $r->email ?? null),
+                'initials'           => $initialsFromDisplay($display),
                 'is_family_member'   => (bool)$r->is_family_member,
                 'is_manager'         => (bool)$r->is_manager,
             ];
         })->toArray();
+
     }
 
     /** Opprett bruker globalt og knytt til aktiv tenant (upsert membership). */
@@ -116,6 +131,7 @@ class UsersModel
 
         $firstname = trim((string)($payload['firstname'] ?? ''));
         $lastname  = trim((string)($payload['lastname']  ?? ''));
+        $display   = $this->nvl($payload['display_name'] ?? null);
         $email     = $this->nvl($payload['email']  ?? null);
         $mobile    = $this->nvl($payload['mobile'] ?? null);
         $isFamily  = (int)($payload['is_family_member'] ?? 1);
@@ -138,6 +154,7 @@ class UsersModel
                 if ($existing->firstname !== $firstname) $upd['firstname'] = $firstname;
                 if ($existing->lastname  !== $lastname)  $upd['lastname']  = $lastname;
                 if ($mobile !== null && $existing->mobile !== $mobile) $upd['mobile'] = $mobile;
+                if ($display !== null && trim((string)$existing->display_name) !== $display) $upd['display_name'] = $display;
                 if ($upd) {
                     $upd['updated_at'] = DB::raw('CURRENT_TIMESTAMP');
                     DB::table('users')->where('id', $userId)->update($upd);
@@ -147,10 +164,12 @@ class UsersModel
 
         if (!$userId) {
             $userId = Id::ulid();
+            $displayInsert = $display ?? trim($firstname.' '.$lastname);
             DB::table('users')->insert([
                 'id'                  => $userId,
                 'firstname'           => $firstname,
                 'lastname'            => $lastname,
+                'display_name'        => $displayInsert,
                 'email'               => $email,
                 'mobile'              => $mobile,
                 'profile_image_url'   => null,
@@ -204,7 +223,7 @@ class UsersModel
             ->where('hm.household_id', $hid)
             ->where('u.id', $userId)
             ->select(
-                'u.id','u.firstname','u.lastname','u.email','u.mobile',
+                'u.id','u.firstname','u.lastname','u.display_name','u.email','u.mobile',
                 'u.profile_image_url',
                 'hm.is_family_member','hm.is_manager'
             )
@@ -212,7 +231,8 @@ class UsersModel
 
         if (!$row) throw new \UnexpectedValueException('User not found in tenant', 404);
 
-        $display = $this->displayName($row->firstname ?? '', $row->lastname ?? '', $row->email ?? null);
+        $explicit = trim((string)($row->display_name ?? ''));
+        $display  = $explicit !== '' ? $explicit : $this->displayName($row->firstname ?? '', $row->lastname ?? '', $row->email ?? null);
 
         return [
             'id'                 => (string)$row->id,
@@ -251,8 +271,26 @@ class UsersModel
             if ($v === '') throw new \InvalidArgumentException('lastname cannot be empty', 422);
             $updUser['lastname'] = $v;
         }
+        if (array_key_exists('display_name', $payload)) {
+            $updUser['display_name'] = $this->nvl($payload['display_name']); // tom streng => NULL
+        }
         if (array_key_exists('email', $payload)) {
-            $updUser['email'] = $this->nvl($payload['email']);
+            $newEmail = $this->nvl($payload['email']);
+            // Check if email is already in use by another user
+            if ($newEmail !== null) {
+                $existingUser = DB::table('users')
+                    ->where('email', $newEmail)
+                    ->where('id', '!=', $userId)
+                    ->first();
+                if ($existingUser) {
+                    throw new \InvalidArgumentException(
+                        "E-postadressen '{$newEmail}' er allerede i bruk av en annen bruker. " .
+                        "Vennligst bruk en annen e-postadresse, eller slett duplikatet fra People-listen først.",
+                        409
+                    );
+                }
+            }
+            $updUser['email'] = $newEmail;
         }
         if (array_key_exists('mobile', $payload)) {
             $updUser['mobile'] = $this->nvl($payload['mobile']);

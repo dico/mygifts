@@ -1,15 +1,24 @@
 <!-- src/public/app/templates/products.jsr -->
-<div class="toolbar d-flex align-items-center mb-3">
-  <h5 class="mb-0">{{:title}}</h5>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="page-title mb-0">{{:title}}</h2>
 
-  <div class="ms-auto d-flex align-items-center gap-2" style="max-width:420px">
-    <div style="width:260px">
-      <input id="prodSearch" class="form-control form-control-sm" placeholder="Search products…" value="{{:q||''}}">
-    </div>
+  <div class="d-flex align-items-center gap-2">
+    <!-- Search toggle button -->
+    <button
+      id="toggleSearchBtn"
+      class="btn-icon--glass"
+      title="Search products"
+      aria-label="Toggle search"
+      type="button"
+    >
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+    </button>
 
     <!-- New product -->
     <button
-      class="btn btn-primary btn-sm"
+      class="btn-icon--primary"
+      title="New product"
+      aria-label="New product"
       data-mm="open"
       data-mm-template="modals/modal_product_form"
       data-mm-title="New product"
@@ -29,9 +38,13 @@
       type="button"
     >
       <i class="fa-solid fa-plus" aria-hidden="true"></i>
-      <span class="btn-label">New product</span>
     </button>
   </div>
+</div>
+
+<!-- Search field (toggleable) -->
+<div id="searchContainer" class="mb-3" style="{{if q}}display: block;{{else}}display: none;{{/if}}">
+  <input id="prodSearch" class="form-control" placeholder="Search products…" value="{{:q||''}}" autocomplete="off">
 </div>
 
 {{if loading}}
@@ -95,36 +108,50 @@
               {{if price}}<span class="price">{{:price}}</span>{{/if}}
             </div>
 
-            <button
-              class="btn-icon"
-              title="Edit product"
-              aria-label="Edit product"
-              data-mm="open"
-              data-mm-template="modals/modal_product_form"
-              data-mm-title="Edit product"
-              data-mm-submit-label="Save"
-              data-mm-method="PATCH"
-              data-mm-sources='[{"key":"product","url":"/api/products/{id}"}]'
-              data-mm-form-id="productForm"
-              data-mm-emit-entity="product"
-              data-id="{{:id}}"
-              type="button"
-            >
-              <i class="fa-solid fa-pen" aria-hidden="true"></i>
-              <span class="visually-hidden">Edit</span>
-            </button>
-
-            <button
-              class="btn-icon btn-icon--danger"
-              title="Delete product"
-              aria-label="Delete product"
-              data-delete="product"
-              data-id="{{:id}}"
-              type="button"
-            >
-              <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              <span class="visually-hidden">Delete</span>
-            </button>
+            <div class="dropdown">
+              <button
+                class="btn-icon"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                title="Actions"
+                aria-label="Actions"
+              >
+                <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button
+                    class="dropdown-item"
+                    data-mm="open"
+                    data-mm-template="modals/modal_product_form"
+                    data-mm-title="Edit product"
+                    data-mm-submit-label="Save"
+                    data-mm-method="PATCH"
+                    data-mm-sources='[{"key":"product","url":"/api/products/{id}"}]'
+                    data-mm-form-id="productForm"
+                    data-mm-emit-entity="product"
+                    data-id="{{:id}}"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
+                    Edit
+                  </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <button
+                    class="dropdown-item text-danger"
+                    data-delete="product"
+                    data-id="{{:id}}"
+                    type="button"
+                  >
+                    <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
+                    Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       {{/for}}

@@ -45,7 +45,12 @@ body{ background: var(--bg-page); }
 
 /* Små utilities */
 .text-truncate-1{
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 .text-muted-2{ color: var(--text-muted); }
 
@@ -151,7 +156,12 @@ body{ background: var(--bg-page); }
   display:flex; align-items:center; gap: var(--gap-4);
 }
 .item-row__main{ flex:1 1 auto; min-width:0; }
-.item-row__meta{ font-size:.875rem; color: var(--text-muted); }
+.item-row__meta{
+  font-size:.875rem;
+  color: var(--text-muted);
+  min-width: 0;
+  overflow: hidden;
+}
 
 /* ★ Price-kolonne: stor, høyrejustert, fast min-bredde */
 .item-row__price{
@@ -321,6 +331,34 @@ body{ background: var(--bg-page); }
   font: 600 12px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   text-transform: uppercase;
   border: 1px solid rgba(0,0,0,.08);
+}
+
+/* Selected items in TomSelect - badge styling */
+.ts-control .item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 1rem !important;
+  padding: 0.15rem 0.5rem 0.15rem 0.15rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+  margin: 2px !important;
+  height: auto !important;
+}
+
+/* Smaller avatar in selected items */
+.ts-control .item .ts-avatar {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.ts-control .item .ts-avatar--initials {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
 }
 
 

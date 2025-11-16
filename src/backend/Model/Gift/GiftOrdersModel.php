@@ -24,14 +24,14 @@ class GiftOrdersModel
     }
 
     private function userDisplay($u): string {
-        $name = trim((string)($u['display_name'] ?? ''));
-        if ($name !== '') return $name;
-        $first = trim((string)($u['firstname'] ?? ''));
-        $last  = trim((string)($u['lastname'] ?? ''));
-        $full  = trim($first.' '.$last);
-        if ($full !== '') return $full;
-        return (string)($u['email'] ?? 'User');
-    }
+		$explicit = trim((string)($u['display_name'] ?? ''));
+		if ($explicit !== '') return $explicit;
+
+		$first = trim((string)($u['firstname'] ?? ''));
+		$last  = trim((string)($u['lastname'] ?? ''));
+		return trim($first.' '.$last); // kan bli '' hvis begge er tomme – det er OK
+	}
+
 
     private function withDerivedUser($u): array {
         $disp = $this->userDisplay($u);
@@ -57,186 +57,240 @@ class GiftOrdersModel
      *  - RECEIVED:  (minst én mottaker er is_family_member=1)
      */
     public function listGroupedForEvent(string $requesterUserId, string $eventId): array {
-        $hid = Tenant::activeId($requesterUserId);
-        Tenant::assertMembership($hid, $requesterUserId);
+		$hid = Tenant::activeId($requesterUserId);
+		Tenant::assertMembership($hid, $requesterUserId);
 
-        // 1) Hent alle ordrer for event + produkt-info
-        $orders = DB::table('gift_orders as o')
-            ->leftJoin('products as p', 'p.id', '=', 'o.product_id')
-            ->where('o.household_id', $hid)
-            ->where('o.event_id', $eventId)
-            ->orderBy('o.created_at', 'asc')
-            ->select(
-                'o.*',
-                'p.name as product_name',
-                'p.image_url as product_image_url'
-            )
-            ->get();
+		// 1) Ordrer for event
+		$orders = DB::table('gift_orders as o')
+			->leftJoin('products as p', 'p.id', '=', 'o.product_id')
+			->where('o.household_id', $hid)
+			->where('o.event_id', $eventId)
+			->orderBy('o.created_at', 'asc')
+			->select('o.*','p.name as product_name','p.image_url as product_image_url')
+			->get();
 
-        if ($orders->isEmpty()) {
-            return ['give' => [], 'received' => []];
-        }
+		if ($orders->isEmpty()) {
+			return [
+				'give' => [], 'received' => [],
+				'give_grouped' => [], 'received_grouped' => [],
+			];
+		}
 
-        $orderIds = array_map(fn($r) => (string)$r->id, iterator_to_array($orders));
+		$orderIds = array_map(fn($r)=>(string)$r->id, iterator_to_array($orders));
 
-        // 2) Hent alle deltakere for disse ordrene, og marker hvem som er familiemedlemmer
-        $parts = DB::table('gift_order_participants as gp')
-            ->join('users as u', 'u.id', '=', 'gp.user_id')
-            ->leftJoin('household_members as hm', function($j) use ($hid) {
-                $j->on('hm.user_id', '=', 'u.id')->where('hm.household_id', '=', $hid);
-            })
-            ->whereIn('gp.order_id', $orderIds)
-            ->select(
-                'gp.order_id',
-                'gp.role',
-                'u.id as uid',
-                'u.firstname',
-                'u.lastname',
-                'u.email',
-                'u.profile_image_url',
-                DB::raw('CASE WHEN hm.is_family_member = 1 THEN 1 ELSE 0 END as is_family_member')
-            )
-            ->orderBy('gp.created_at','asc')
-            ->get();
+		// 2) Deltakere (inkl. users.display_name)
+		$parts = DB::table('gift_order_participants as gp')
+			->join('users as u', 'u.id', '=', 'gp.user_id')
+			->leftJoin('household_members as hm', function($j) use ($hid) {
+				$j->on('hm.user_id','=','u.id')->where('hm.household_id','=',$hid);
+			})
+			->whereIn('gp.order_id', $orderIds)
+			->select(
+				'gp.order_id','gp.role',
+				'u.id as uid','u.firstname','u.lastname','u.display_name','u.email','u.profile_image_url',
+				DB::raw('CASE WHEN hm.is_family_member=1 THEN 1 ELSE 0 END as is_family_member')
+			)
+			->orderBy('gp.created_at','asc')
+			->get();
 
-        $byOrder = [];
-        foreach ($parts as $p) {
-            $oid = (string)$p->order_id;
-            $role = (string)$p->role; // 'giver' | 'recipient'
-            $byOrder[$oid] ??= ['givers'=>[], 'recipients'=>[]];
-            $byOrder[$oid][$role === 'giver' ? 'givers' : 'recipients'][] = [
-                'id'               => (string)$p->uid,
-                'firstname'        => $p->firstname,
-                'lastname'         => $p->lastname,
-                'email'            => $p->email,
-                'profile_image_url'=> $p->profile_image_url,
-                'is_family_member' => ((int)$p->is_family_member) === 1,
-            ];
-        }
+		$byOrder = [];
+		foreach ($parts as $p) {
+			$oid  = (string)$p->order_id;
+			$role = (string)$p->role; // giver|recipient
+			$byOrder[$oid] ??= ['givers'=>[], 'recipients'=>[]];
 
-        // 3) Flatt «gift»-objekter, bestem fanetilhørighet etter reglene
-        $giftsWeGive = [];
-        $giftsWeReceived = [];
+			// display_name → fornavn+etternavn → epost → 'User'
+			$explicit = trim((string)($p->display_name ?? ''));
+			$fnln     = trim(trim((string)$p->firstname).' '.trim((string)$p->lastname));
+			$disp     = $explicit !== '' ? $explicit : ($fnln !== '' ? $fnln : ((string)($p->email ?? '') ?: 'User'));
 
-        foreach ($orders as $r) {
-            $oid = (string)$r->id;
-            $gvs = array_map(fn($u) => $this->withDerivedUser($u), $byOrder[$oid]['givers'] ?? []);
-            $rcs = array_map(fn($u) => $this->withDerivedUser($u), $byOrder[$oid]['recipients'] ?? []);
+			$byOrder[$oid][$role === 'giver' ? 'givers' : 'recipients'][] = [
+				'id'                => (string)$p->uid,
+				'display_name'      => $disp,
+				'email'             => $p->email ?: null,
+				'profile_image_url' => $p->profile_image_url ?: null,
+				'is_family_member'  => ((int)$p->is_family_member)===1,
+			];
+		}
 
-            $gift = [
-                'id'                => $oid,
-                'order_id'          => $oid,
-                'event_id'          => (string)$r->event_id,
-                'title'             => $r->title,
-                'product_id'        => $r->product_id ? (string)$r->product_id : null,
-                'product_name'      => $r->product_name ?? null,
-                'product_image_url' => $r->product_image_url ?? null,
-                'image_url'         => $r->product_image_url ?? null,
-                'price'             => isset($r->price) ? (string)$r->price : null,
-                'status'            => (string)$r->status,
-                'notes'             => $r->notes,
-                'purchased_at'      => $r->purchased_at,
-                'given_at'          => $r->given_at,
-                'givers'            => $gvs,
-                'recipients'        => $rcs,
-                'givers_display'    => implode(', ', array_filter(array_map(fn($u) => $u['display_name'] ?? '', $gvs))),
-                'recipients_display'=> implode(', ', array_filter(array_map(fn($u) => $u['display_name'] ?? '', $rcs))),
-                'status_class'      => $this->statusClass((string)$r->status),
-            ];
+		// 3) Flat gaveliste + fane-tilhørighet
+		$giftsWeGive = [];
+		$giftsWeReceived = [];
 
-            $hasAnyGivers       = !empty($gvs);
-            $hasFamilyGiver     = array_reduce($gvs, fn($c,$u)=> $c || !empty($u['is_family_member']), false);
-            $hasFamilyRecipient = array_reduce($rcs, fn($c,$u)=> $c || !empty($u['is_family_member']), false);
+		foreach ($orders as $r) {
+			$oid = (string)$r->id;
+			$gvs = array_map(fn($u) => $this->withDerivedUser($u), $byOrder[$oid]['givers'] ?? []);
+			$rcs = array_map(fn($u) => $this->withDerivedUser($u), $byOrder[$oid]['recipients'] ?? []);
 
-            // Regler
-            $inGive     = (!$hasAnyGivers) || $hasFamilyGiver;
-            $inReceived = $hasFamilyRecipient;
+			$gift = [
+				'id'                => $oid,
+				'order_id'          => $oid,
+				'event_id'          => (string)$r->event_id,
+				'title'             => $r->title,
+				'product_id'        => $r->product_id ? (string)$r->product_id : null,
+				'product_name'      => $r->product_name ?? null,
+				'product_image_url' => $r->product_image_url ?? null,
+				'image_url'         => $r->product_image_url ?? null,
+				'price'             => isset($r->price) ? (string)$r->price : null,
+				'status'            => (string)$r->status,
+				'notes'             => $r->notes,
+				'purchased_at'      => $r->purchased_at,
+				'given_at'          => $r->given_at,
+				'givers'            => $gvs,
+				'recipients'        => $rcs,
+				'givers_display'    => implode(', ', array_filter(array_map(fn($u)=>$u['display_name'] ?? '', $gvs))),
+				'recipients_display'=> implode(', ', array_filter(array_map(fn($u)=>$u['display_name'] ?? '', $rcs))),
+				'status_class'      => $this->statusClass((string)$r->status),
+			];
 
-            if ($inGive)     $giftsWeGive[]     = $gift;
-            if ($inReceived) $giftsWeReceived[] = $gift;
-        }
+			$hasAnyGivers       = !empty($gvs);
+			$hasFamilyGiver     = array_reduce($gvs, fn($c,$u)=> $c || !empty($u['is_family_member']), false);
+			$hasFamilyRecipient = array_reduce($rcs, fn($c,$u)=> $c || !empty($u['is_family_member']), false);
 
-        // 4) Gruppér:
-        //    - GIVE      grupperes på mottaker(e) ⇒ vis under hver mottaker
-        //    - RECEIVED  grupperes på mottaker(e) ⇒ vis under hver mottaker
-        //
-        //    (Om du heller vil gruppere "received" på giver(e), bytt 'recipient' til 'giver' på siste linje i return)
-        $group = function(array $gifts, string $role) {
-            $map = [];
+			$inGive     = (!$hasAnyGivers) || $hasFamilyGiver;
+			$inReceived = $hasFamilyRecipient;
 
-            foreach ($gifts as $g) {
-                // Hent alle personer for valgt rolle (ikke bare første)
-                $arr = $role === 'recipient' ? ($g['recipients'] ?? []) : ($g['givers'] ?? []);
+			if ($inGive)     $giftsWeGive[]     = $gift;
+			if ($inReceived) $giftsWeReceived[] = $gift;
+		}
 
-                // Fallback hvis ingen deltakere finnes for rollen
-                if (empty($arr)) {
-                    $arr = [[
-                        'id'               => '__unknown__',
-                        'display_name'     => $role === 'recipient' ? 'Other recipients' : 'Other givers',
-                        'email'            => null,
-                        'profile_image_url'=> null,
-                        'initials'         => $role === 'recipient' ? 'OR' : 'OG',
-                        'is_family_member' => false,
-                    ]];
-                }
+		// 4) Grupper per person (uendret, bruker display_name)
+		$group = function(array $gifts, string $role) {
+			$map = [];
+			foreach ($gifts as $g) {
+				$arr = $role === 'recipient' ? ($g['recipients'] ?? []) : ($g['givers'] ?? []);
+				if (empty($arr)) {
+					$arr = [[
+						'id' => '__unknown__',
+						'display_name' => $role === 'recipient' ? 'Other recipients' : 'Other givers',
+						'profile_image_url'=> null,
+					]];
+				}
+				foreach ($arr as $pick) {
+					$pid = $pick['id'] ?? '__unknown__';
+					$user = [
+						'id' => $pid,
+						'display_name' => (string)($pick['display_name'] ?? ''),
+						'profile_image_url' => $pick['profile_image_url'] ?? null,
+						'initials' => strtoupper(substr((string)($pick['display_name'] ?? ''), 0, 2)) ?: ($role === 'recipient' ? 'OR' : 'OG'),
+					];
+					if (!isset($map[$pid])) {
+						if ($pid === '__unknown__' && $user['display_name'] === '') {
+							$user['display_name'] = $role === 'recipient' ? 'Other recipients' : 'Other givers';
+						}
+						$map[$pid] = ['user' => $user, 'gifts' => []];
+					}
+					// unngå duplikat per person
+					$exists = false;
+					foreach ($map[$pid]['gifts'] as $ex) {
+						if (($ex['order_id'] ?? null) === ($g['order_id'] ?? null)) { $exists = true; break; }
+					}
+					if (!$exists) $map[$pid]['gifts'][] = $g;
+				}
+			}
+			$list = array_values($map);
+			usort($list, fn($a,$b)=>strcasecmp($a['user']['display_name'] ?? '', $b['user']['display_name'] ?? ''));
 
-                // ➜ NYTT: legg gaven inn i *alle* relevante grupper (en per mottaker/giver)
-                foreach ($arr as $pick) {
-                    $pid = $pick['id'] ?? '__unknown__';
-                    $user = [
-                        'id'                => $pid,
-                        'display_name'      => (string)($pick['display_name'] ?? ''),
-                        'profile_image_url' => $pick['profile_image_url'] ?? null,
-                        'initials'          => strtoupper(substr((string)($pick['display_name'] ?? ''), 0, 2)) ?: ($role === 'recipient' ? 'OR' : 'OG'),
-                    ];
+			$statusOrder = ['idea'=>1,'reserved'=>2,'purchased'=>3,'given'=>4,'cancelled'=>9];
+			foreach ($list as &$grp) {
+				usort($grp['gifts'], function($x,$y) use ($statusOrder) {
+					$sx = $statusOrder[$x['status']] ?? 99;
+					$sy = $statusOrder[$y['status']] ?? 99;
+					if ($sx !== $sy) return $sx - $sy;
+					return strcasecmp($x['title'] ?? $x['product_name'] ?? '', $y['title'] ?? $y['product_name'] ?? '');
+				});
+			}
+			unset($grp);
+			return $list;
+		};
 
-                    if (!isset($map[$pid])) {
-                        // Sørg for at ukjent-fallback har fornuftige etiketter
-                        if ($pid === '__unknown__' && $user['display_name'] === '') {
-                            $user['display_name'] = $role === 'recipient' ? 'Other recipients' : 'Other givers';
-                        }
-                        $map[$pid] = ['user' => $user, 'gifts' => []];
-                    }
+		// 5) Grupper per *sett* av personer (ingen short_display_name)
+		$groupBySet = function(array $gifts, string $role) {
+			$map = [];
 
-                    // Unngå duplikater av samme gave for samme person (edge-case)
-                    // Nøkkel: order_id
-                    $already = false;
-                    foreach ($map[$pid]['gifts'] as $existing) {
-                        if (($existing['order_id'] ?? null) === ($g['order_id'] ?? null)) {
-                            $already = true; break;
-                        }
-                    }
-                    if (!$already) {
-                        $map[$pid]['gifts'][] = $g;
-                    }
-                }
-            }
+			foreach ($gifts as $g) {
+				$people = $role === 'recipient' ? ($g['recipients'] ?? []) : ($g['givers'] ?? []);
+				if (empty($people)) {
+					$key = 'set:__unknown__';
+					$map[$key] ??= [
+						'user' => [
+							'id'              => $key,
+							'display_name'    => $role === 'recipient' ? 'Other recipients' : 'Other givers',
+							'initials'        => $role === 'recipient' ? 'OR' : 'OG',
+							'members'         => [],
+						],
+						'gifts' => [],
+					];
+					$map[$key]['gifts'][$g['order_id']] = $g;
+					continue;
+				}
 
-            // sorter grupper etter visningsnavn; sorter gaver etter status + tittel
-            $list = array_values($map);
-            usort($list, function($a, $b) {
-                return strcasecmp($a['user']['display_name'] ?? '', $b['user']['display_name'] ?? '');
-            });
+				// stabil nøkkel
+				$ids = array_map(fn($u)=>(string)($u['id'] ?? ''), $people);
+				sort($ids, SORT_STRING);
+				$key = 'set:'.implode('|', $ids);
 
-            $statusOrder = ['idea'=>1,'reserved'=>2,'purchased'=>3,'given'=>4,'cancelled'=>9];
-            foreach ($list as &$grp) {
-                usort($grp['gifts'], function($x,$y) use ($statusOrder) {
-                    $sx = $statusOrder[$x['status']] ?? 99;
-                    $sy = $statusOrder[$y['status']] ?? 99;
-                    if ($sx !== $sy) return $sx - $sy;
-                    return strcasecmp($x['title'] ?? $x['product_name'] ?? '', $y['title'] ?? $y['product_name'] ?? '');
-                });
-            }
-            unset($grp);
+				// label direkte fra display_name
+				$names = array_map(fn($u)=>(string)($u['display_name'] ?? ''), $people);
+				$label = implode(' og ', array_filter($names, fn($s)=>$s !== ''));
 
-            return $list;
-        };
+				$members = array_map(function($u) {
+					$dn = (string)($u['display_name'] ?? '');
+					return [
+						'id'                => (string)($u['id'] ?? ''),
+						'display_name'      => $dn,
+						'profile_image_url' => $u['profile_image_url'] ?? null,
+						'initials'          => strtoupper(mb_substr($dn !== '' ? $dn : 'U', 0, 2)),
+					];
+				}, $people);
 
-        return [
-            'give'     => $group($giftsWeGive, 'recipient'),
-            'received' => $group($giftsWeReceived, 'recipient'),
-        ];
-    }
+				if (!isset($map[$key])) {
+					$map[$key] = [
+						'user' => [
+							'id'              => $key,
+							'display_name'    => $label,
+							'initials'        => strtoupper(mb_substr($label !== '' ? $label : 'U', 0, 2)),
+							'members'         => $members,
+						],
+						'gifts' => [],
+					];
+				}
+				$map[$key]['gifts'][$g['order_id']] = $g;
+			}
+
+			// Flatten + sorter
+			$list = array_values(array_map(function($grp){
+				$grp['gifts'] = array_values($grp['gifts']); return $grp;
+			}, $map));
+
+			usort($list, fn($a,$b)=>strcasecmp($a['user']['display_name'] ?? '', $b['user']['display_name'] ?? ''));
+
+			$statusOrder = ['idea'=>1,'reserved'=>2,'purchased'=>3,'given'=>4,'cancelled'=>9];
+			foreach ($list as &$grp) {
+				usort($grp['gifts'], function($x,$y) use ($statusOrder) {
+					$sx = $statusOrder[$x['status']] ?? 99;
+					$sy = $statusOrder[$y['status']] ?? 99;
+					if ($sx !== $sy) return $sx - $sy;
+					return strcasecmp($x['title'] ?? $x['product_name'] ?? '', $y['title'] ?? $y['product_name'] ?? '');
+				});
+			}
+			unset($grp);
+
+			return $list;
+		};
+
+		// 6) Returnér begge varianter
+		return [
+			'give'             => $group($giftsWeGive, 'recipient'),
+			'received'         => $group($giftsWeReceived, 'recipient'),
+			'give_grouped'     => $groupBySet($giftsWeGive, 'recipient'),
+			'received_grouped' => $groupBySet($giftsWeReceived, 'recipient'),
+		];
+	}
+
+
+
+
 
 
 

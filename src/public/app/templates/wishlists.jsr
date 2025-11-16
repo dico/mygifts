@@ -22,7 +22,9 @@
 
           <!-- Add wish -->
           <button
-            class="btn btn-primary btn-sm"
+            class="btn-icon--primary"
+            title="Add wish for {{:user.display_name}}"
+            aria-label="Add wish for {{:user.display_name}}"
             data-mm="open"
             data-mm-template="modals/modal_wishlist_item_form"
             data-mm-title="Add wish"
@@ -42,7 +44,6 @@
             type="button"
           >
             <i class="fa-solid fa-plus" aria-hidden="true"></i>
-            <span class="btn-label">Add wish</span>
           </button>
         </div>
 
@@ -99,50 +100,64 @@
                     </div>
                   {{/if}}
 
-                  <button
-                    class="btn-icon"
-                    title="Edit wish"
-                    aria-label="Edit wish"
-                    data-mm="open"
-                    data-mm-template="modals/modal_wishlist_item_form"
-                    data-mm-title="Edit wish"
-                    data-mm-submit-label="Save"
-                    data-mm-action="/api/wishlists/{id}"
-                    data-mm-method="PATCH"
-                    data-mm-sources='[
-                      {"key":"item","url":"/api/wishlists/{id}","path":"wishlist_item"}
-                    ]'
-                    data-mm-emit-entity="wishlist"
-                    data-id="{{:id}}"
-                    type="button"
-                  >
-                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                    <span class="visually-hidden">Edit</span>
-                  </button>
-
-                  <button
-                    class="btn-icon btn-icon--danger"
-                    title="Delete wish"
-                    aria-label="Delete wish"
-                    data-delete="wishlist"
-                    data-id="{{:id}}"
-                    type="button"
-                  >
-                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                    <span class="visually-hidden">Delete</span>
-                  </button>
+                  <div class="dropdown">
+                    <button
+                      class="btn-icon"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      title="Actions"
+                      aria-label="Actions"
+                    >
+                      <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <button
+                          class="dropdown-item"
+                          data-mm="open"
+                          data-mm-template="modals/modal_wishlist_item_form"
+                          data-mm-title="Edit wish"
+                          data-mm-submit-label="Save"
+                          data-mm-action="/api/wishlists/{id}"
+                          data-mm-method="PATCH"
+                          data-mm-sources='[
+                            {"key":"item","url":"/api/wishlists/{id}","path":"wishlist_item"}
+                          ]'
+                          data-mm-emit-entity="wishlist"
+                          data-id="{{:id}}"
+                          type="button"
+                        >
+                          <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
+                          Edit
+                        </button>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <button
+                          class="dropdown-item text-danger"
+                          data-delete="wishlist"
+                          data-id="{{:id}}"
+                          type="button"
+                        >
+                          <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
+                          Delete
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             {{/for}}
           </div>
         {{else}}
-          <div class="empty">No wishes yet.</div>
+          <div class="text-muted">No wishes yet.</div>
         {{/if}}
-
-        <div class="divider"></div>
       {{/for}}
     </div>
   {{else}}
-    <div class="empty">No family members found.</div>
+    <div class="alert alert-light border mt-3" role="alert">
+      No family members found.
+    </div>
   {{/if}}
 {{/if}}

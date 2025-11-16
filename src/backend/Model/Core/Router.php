@@ -10,6 +10,7 @@ use App\Controller\Product\ProductsController;
 use App\Controller\Gift\GiftsController;
 use App\Controller\Gift\GiftOrdersController;
 use App\Controller\Wishlist\WishlistsController;
+use App\Controller\GiftTemplate\GiftTemplatesController;
 
 class Router
 {
@@ -114,6 +115,16 @@ class Router
 				// USERS – received gifts for a user (across events)
 				$r->addRoute('GET', "/users/{id:$ULID}/received-gifts", [UsersController::class, 'receivedGifts']);
 
+				// GIFT TEMPLATES
+				$r->addRoute('GET',    '/gift-templates',                      [GiftTemplatesController::class, 'index']);
+				$r->addRoute('POST',   '/gift-templates',                      [GiftTemplatesController::class, 'create']);
+				$r->addRoute('GET',    "/gift-templates/{id:$ULID}",           [GiftTemplatesController::class, 'show']);
+				$r->addRoute('PATCH',  "/gift-templates/{id:$ULID}",           [GiftTemplatesController::class, 'update']);
+				$r->addRoute('DELETE', "/gift-templates/{id:$ULID}",           [GiftTemplatesController::class, 'destroy']);
+				$r->addRoute('POST',   "/gift-templates/{id:$ULID}/items",     [GiftTemplatesController::class, 'addItem']);
+				$r->addRoute('PATCH',  "/gift-templates/{id:$ULID}/items/{itemId:$ULID}", [GiftTemplatesController::class, 'updateItem']);
+				$r->addRoute('DELETE', "/gift-templates/{id:$ULID}/items/{itemId:$ULID}", [GiftTemplatesController::class, 'deleteItem']);
+				$r->addRoute('POST',   "/gift-templates/{id:$ULID}/import",    [GiftTemplatesController::class, 'importToEvent']);
 
             });
 

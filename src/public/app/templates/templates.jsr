@@ -1,0 +1,62 @@
+<!-- src/public/app/templates/templates.jsr -->
+<div class="d-flex align-items-center mb-3">
+  <a href="/app/settings" class="btn btn-sm btn-outline-secondary me-3 nav-link">
+    <i class="fa-solid fa-arrow-left"></i> Back to Settings
+  </a>
+  <h2 class="page-title mb-0">Gift Templates</h2>
+</div>
+
+<div class="d-flex justify-content-end mb-3">
+  <button
+    class="btn-icon--primary"
+    title="New Template"
+    aria-label="New Template"
+    data-mm="open"
+    data-mm-template="modals/modal_template_form"
+    data-mm-title="New Template"
+    data-mm-submit-label="Create"
+    data-mm-method="POST"
+    data-mm-action="/api/gift-templates"
+    data-mm-emit-entity="template"
+    data-mm-preset='{
+      "template": {
+        "name": "",
+        "description": ""
+      }
+    }'
+    type="button"
+  >
+    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+  </button>
+</div>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading templates…</div>
+  </div>
+{{else}}
+  {{if templates && templates.length}}
+    <div class="list-group">
+      {{for templates}}
+        <a href="/app/settings/templates/{{:id}}" class="list-group-item list-group-item-action nav-link">
+          <div class="d-flex w-100 justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1">{{:name}}</h5>
+              {{if description}}
+                <p class="mb-1 text-muted small">{{:description}}</p>
+              {{/if}}
+              <small class="text-muted">{{:item_count}} relationship{{:item_count !== 1 ? 's' : ''}}</small>
+            </div>
+            <i class="fa-solid fa-chevron-right text-muted"></i>
+          </div>
+        </a>
+      {{/for}}
+    </div>
+  {{else}}
+    <div class="alert alert-light border">
+      <p class="mb-0">No templates yet.</p>
+      <p class="mb-0 small text-muted">Create a template to save recurring gift relationships (e.g., who gives to whom at Christmas).</p>
+    </div>
+  {{/if}}
+{{/if}}

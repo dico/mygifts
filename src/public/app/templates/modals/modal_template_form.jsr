@@ -1,0 +1,32 @@
+<!-- src/public/app/templates/modals/modal_template_form.jsr -->
+<form id="templateForm"
+      action="{{:action || '/api/gift-templates'}}"
+      data-method="{{:method || 'POST'}}"
+      data-send="json">
+
+  <div class="modal-header">
+    <h5 class="modal-title">{{:(title && title.substring) ? title : 'Template'}}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input name="name" type="text" class="form-control" value="{{:template.name || ''}}" required autofocus>
+      <div class="form-text">E.g., "Christmas gifts" or "Birthday rotation"</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Description (optional)</label>
+      <textarea name="description" class="form-control" rows="3">{{:template.description || ''}}</textarea>
+    </div>
+
+    <div class="error-message d-none"></div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary">
+      {{:submitLabel || 'Save'}}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,196 @@
+<!-- src/public/app/templates/template_detail.jsr -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex align-items-center">
+    <a href="/app/settings/templates" class="btn btn-sm btn-outline-secondary me-3 nav-link">
+      <i class="fa-solid fa-arrow-left"></i> Back to Templates
+    </a>
+    <h2 class="page-title mb-0">{{:template.name}}</h2>
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+    <!-- Edit template -->
+    <button
+      class="btn-icon--glass"
+      title="Edit template"
+      aria-label="Edit template"
+      data-mm="open"
+      data-mm-template="modals/modal_template_form"
+      data-mm-title="Edit Template"
+      data-mm-submit-label="Save"
+      data-mm-method="PATCH"
+      data-mm-action="/api/gift-templates/{{:template.id}}"
+      data-mm-sources='[{"key":"template","url":"/api/gift-templates/{{:template.id}}","path":"template"}]'
+      data-mm-emit-entity="template"
+      type="button"
+    >
+      <i class="fa-solid fa-pen" aria-hidden="true"></i>
+    </button>
+
+    <!-- Delete template -->
+    <button
+      class="btn-icon--glass"
+      title="Delete template"
+      aria-label="Delete template"
+      data-delete="template"
+      data-id="{{:template.id}}"
+      type="button"
+    >
+      <i class="fa-solid fa-trash" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+{{if template.description}}
+  <p class="text-muted mb-3">{{:template.description}}</p>
+{{/if}}
+
+<p class="text-muted small mb-3">
+  <i class="fa-solid fa-info-circle"></i> Select multiple givers and recipients to create gift relationships. You can select multiple people in each field. Changes are saved automatically.
+</p>
+
+{{if loading}}
+  <div class="text-center my-4">
+    <div class="spinner-border" role="status"></div>
+    <div class="text-muted mt-2">Loading…</div>
+  </div>
+{{else}}
+  <div class="table-responsive" style="overflow: visible;">
+    <table class="table table-bordered" id="templateTable">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 48%">Giver</th>
+          <th style="width: 48%">Recipient</th>
+          <th style="width: 4%"></th>
+        </tr>
+      </thead>
+      <tbody id="templateItemsTable">
+        {{for items}}
+          <tr data-item-id="{{:id}}" class="template-row-saved">
+            <td>
+              <div class="d-flex gap-1 align-items-start">
+                <div class="flex-fill">
+                  <select id="giverSelect_{{:id}}" class="row-select" data-item-id="{{:id}}" data-role="giver"></select>
+                </div>
+                <div class="d-flex gap-1 align-items-center">
+                  <i
+                    class="fa-solid fa-arrow-down text-secondary"
+                    data-copy-above="{{:id}}"
+                    data-role="giver"
+                    title="Copy from above"
+                    style="cursor: pointer; font-size: 0.75rem;"
+                  ></i>
+                  <i
+                    class="fa-solid fa-users text-secondary"
+                    data-add-family="{{:id}}"
+                    title="Add entire family"
+                    style="cursor: pointer; font-size: 0.75rem;"
+                  ></i>
+                  <i
+                    class="fa-solid fa-xmark text-secondary"
+                    data-clear-cell="{{:id}}"
+                    data-role="giver"
+                    title="Clear all"
+                    style="cursor: pointer; font-size: 0.75rem;"
+                  ></i>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex gap-1 align-items-start">
+                <div class="flex-fill">
+                  <select id="recipientSelect_{{:id}}" class="row-select" data-item-id="{{:id}}" data-role="recipient"></select>
+                </div>
+                <div class="d-flex gap-1 align-items-center">
+                  <i
+                    class="fa-solid fa-arrow-down text-secondary"
+                    data-copy-above="{{:id}}"
+                    data-role="recipient"
+                    title="Copy from above"
+                    style="cursor: pointer; font-size: 0.75rem;"
+                  ></i>
+                  <i
+                    class="fa-solid fa-xmark text-secondary"
+                    data-clear-cell="{{:id}}"
+                    data-role="recipient"
+                    title="Clear all"
+                    style="cursor: pointer; font-size: 0.75rem;"
+                  ></i>
+                </div>
+              </div>
+            </td>
+            <td class="text-center">
+              <button
+                class="btn-icon btn-icon--sm btn-icon--danger"
+                data-delete-item="{{:id}}"
+                title="Delete"
+                type="button"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        {{/for}}
+        <!-- Empty row for adding new relationships -->
+        <tr class="template-row-new" id="newRow">
+          <td>
+            <div class="d-flex gap-1 align-items-start">
+              <div class="flex-fill">
+                <select id="newGiverSelect" class="row-select" data-item-id="new" data-role="giver"></select>
+              </div>
+              <div class="d-flex gap-1 align-items-center">
+                <i
+                  class="fa-solid fa-arrow-down text-secondary"
+                  data-copy-above="new"
+                  data-role="giver"
+                  title="Copy from above"
+                  style="cursor: pointer; font-size: 0.75rem;"
+                ></i>
+                <i
+                  class="fa-solid fa-users text-secondary"
+                  data-add-family="new"
+                  title="Add entire family"
+                  style="cursor: pointer; font-size: 0.75rem;"
+                ></i>
+                <i
+                  class="fa-solid fa-xmark text-secondary"
+                  data-clear-cell="new"
+                  data-role="giver"
+                  title="Clear all"
+                  style="cursor: pointer; font-size: 0.75rem;"
+                ></i>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="d-flex gap-1 align-items-start">
+              <div class="flex-fill">
+                <select id="newRecipientSelect" class="row-select" data-item-id="new" data-role="recipient"></select>
+              </div>
+              <div class="d-flex gap-1 align-items-center">
+                <i
+                  class="fa-solid fa-arrow-down text-secondary"
+                  data-copy-above="new"
+                  data-role="recipient"
+                  title="Copy from above"
+                  style="cursor: pointer; font-size: 0.75rem;"
+                ></i>
+                <i
+                  class="fa-solid fa-xmark text-secondary"
+                  data-clear-cell="new"
+                  data-role="recipient"
+                  title="Clear all"
+                  style="cursor: pointer; font-size: 0.75rem;"
+                ></i>
+              </div>
+            </div>
+          </td>
+          <td class="text-center">
+            <span class="text-muted">
+              <i class="fa-solid fa-plus"></i>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{{/if}}

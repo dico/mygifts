@@ -33,6 +33,7 @@ export function initProductSelect(root) {
       persist: false,
       preload: preId ? true : 'focus',
       placeholder: 'Type to search or create…',
+      dropdownParent: 'body', // Render dropdown outside modal to avoid z-index issues
       create: (input) => {
         const name = (input || '').trim();
         if (!name) return null;
@@ -121,6 +122,7 @@ export function initProductSelect(root) {
       placeholder: 'Select people…',
       plugins: ['remove_button'],
       closeAfterSelect: true,
+      dropdownParent: 'body', // Render dropdown outside modal to avoid z-index issues
 
       // forhåndsvalg
       options: preOpts,

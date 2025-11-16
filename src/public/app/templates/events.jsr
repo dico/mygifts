@@ -1,10 +1,12 @@
 <!-- src/public/app/templates/events.jsr -->
-<div class="toolbar">
-  <h5 class="mb-0">{{:title}}</h5>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="page-title mb-0">{{:title}}</h2>
 
   <!-- New event (ModalMini) -->
   <button
-    class="btn btn-primary"
+    class="btn-icon--primary"
+    title="New event"
+    aria-label="New event"
     data-mm="open"
     data-mm-template="modals/modal_event_form"
     data-mm-title="New event"
@@ -17,7 +19,6 @@
     type="button"
   >
     <i class="fa-solid fa-plus" aria-hidden="true"></i>
-    <span class="btn-label">New event</span>
   </button>
 </div>
 
@@ -30,12 +31,12 @@
   {{if events && events.length}}
     <div class="stack-md">
       {{for events}}
-        <div class="item-row item-row--compact item-row--responsive">
+        <a href="/app/events/{{:id}}" class="item-row item-row--compact item-row--responsive item-row--clickable text-decoration-none">
           <!-- Main -->
           <div class="item-row__main">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <div class="fw-semibold text-truncate-1">
-                <a href="/app/events/{{:id}}" class="event-link text-decoration-none">{{:name}}</a>
+                {{:name}}
               </div>
             </div>
 
@@ -45,45 +46,7 @@
               {{if notes}}{{:notes}}{{/if}}
             </div>
           </div>
-
-          <!-- Right: actions -->
-          <div class="item-row__actions">
-            <!-- Edit event (ModalMini) -->
-            <button
-              class="btn-icon"
-              title="Edit event"
-              aria-label="Edit event"
-              data-mm="open"
-              data-mm-template="modals/modal_event_form"
-              data-mm-title="Edit event"
-              data-mm-submit-label="Save changes"
-              data-mm-action="/api/events/{id}"
-              data-mm-method="PATCH"
-              data-mm-sources='[
-                {"key":"event","url":"/api/events/{id}"},
-                {"key":"members","url":"/api/users"}
-              ]'
-              data-mm-emit-entity="event"
-              data-id="{{:id}}"
-              type="button"
-            >
-              <i class="fa-solid fa-pen" aria-hidden="true"></i>
-              <span class="visually-hidden">Edit</span>
-            </button>
-
-            <button
-              class="btn-icon btn-icon--danger"
-              title="Delete event"
-              aria-label="Delete event"
-              data-delete="event"
-              data-id="{{:id}}"
-              type="button"
-            >
-              <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              <span class="visually-hidden">Delete</span>
-            </button>
-          </div>
-        </div>
+        </a>
       {{/for}}
     </div>
   {{else}}

@@ -1,0 +1,1491 @@
+/* ===================================
+   iOS 16+ Liquid Glass Design System
+   True Native App Experience
+   =================================== */
+
+:root {
+  --ios-blue: #007aff;
+  --ios-green: #34c759;
+  --ios-orange: #ff9500;
+  --ios-red: #ff3b30;
+  --ios-purple: #af52de;
+  --ios-pink: #ff2d55;
+
+  /* Liquid glass effects - Stronger for better readability */
+  --glass-strong: rgba(255, 255, 255, 0.35);
+  --glass-medium: rgba(255, 255, 255, 0.25);
+  --glass-light: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --glass-shadow-strong: 0 16px 64px rgba(0, 0, 0, 0.2);
+
+  /* Text colors - White for dark backgrounds */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-tertiary: rgba(255, 255, 255, 0.55);
+
+  /* Safe areas */
+  --safe-top: max(env(safe-area-inset-top), 20px);
+  --safe-bottom: max(env(safe-area-inset-bottom), 20px);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+}
+
+/* ===================================
+   Dynamic Wallpaper Background
+   =================================== */
+
+.ios-app {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ios-app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: cover;
+  background-position: center;
+  z-index: -3;
+  /* This will be replaced by seasonal wallpapers via JS */
+}
+
+/* Seasonal wallpaper backgrounds */
+.ios-app.season-spring::before {
+  background-image: url('/app/assets/images/wallpapers/spring.jpg');
+  background-size: cover;
+}
+
+.ios-app.season-summer::before {
+  background-image: url('/app/assets/images/wallpapers/summer.jpg');
+  background-size: cover;
+}
+
+.ios-app.season-autumn::before {
+  background-image: url('/app/assets/images/wallpapers/autumn.jpg');
+  background-size: cover;
+}
+
+.ios-app.season-winter::before {
+  background-image: url('/app/assets/images/wallpapers/winter.jpg');
+  background-size: cover;
+}
+
+/* Dark overlay to make glass effects pop */
+.ios-app::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.6) 50%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* ===================================
+   Hide Default Bootstrap Navbar
+   =================================== */
+
+.navbar {
+  display: none !important;
+}
+
+/* ===================================
+   App Container Layout
+   =================================== */
+
+main.container {
+  position: fixed;
+  top: var(--safe-top);
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: 0; /* Let content scroll behind bottom nav */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 max(20px, var(--safe-left)) calc(88px + var(--safe-bottom) + 24px) max(20px, var(--safe-right));
+  max-width: none;
+}
+
+/* Hide scrollbar but keep functionality */
+main.container::-webkit-scrollbar {
+  display: none;
+}
+
+main.container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===================================
+   Floating Bottom Navigation (iOS Style)
+   =================================== */
+
+.ios-bottom-nav {
+  position: fixed;
+  bottom: var(--safe-bottom);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 480px;
+  height: 68px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow-strong);
+  z-index: 1000;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 14px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.nav-tab i {
+  font-size: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-tab span {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-tab:hover {
+  color: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-tab.active {
+  color: rgba(255, 255, 255, 1);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nav-tab.active i {
+  transform: scale(1.1);
+}
+
+.nav-tab:active {
+  transform: scale(0.95);
+}
+
+/* ===================================
+   Page Title with Liquid Glass
+   =================================== */
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Add top spacing to all pages */
+.ios-app main,
+.ios-app > main {
+  padding-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: 40px;
+  }
+}
+
+/* ===================================
+   Liquid Glass Cards
+   =================================== */
+
+.card,
+.list-group,
+.alert,
+.modal-content,
+.table-responsive {
+  background: var(--glass-strong);
+  backdrop-filter: saturate(180%) blur(60px);
+  -webkit-backdrop-filter: saturate(180%) blur(60px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+
+.card {
+  margin-bottom: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--glass-shadow-strong);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.card-body {
+  padding: 20px;
+  color: var(--text-primary);
+}
+
+/* All text inside cards should be white */
+.card-body * {
+  color: inherit;
+}
+
+.card-title,
+.fw-semibold {
+  color: var(--text-primary) !important;
+}
+
+.text-muted {
+  color: var(--text-secondary) !important;
+}
+
+/* ===================================
+   Toolbar with Glass Effect
+   =================================== */
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin: 0 -20px 20px -20px;
+  background: var(--glass-light);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.toolbar h5 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ===================================
+   Floating Action Buttons (iOS Style)
+   =================================== */
+
+.btn {
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 11px 20px;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  color: white;
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 122, 255, 0.5);
+  background: linear-gradient(135deg, #0051d5 0%, #003d9e 100%);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+.btn-danger {
+  background: rgba(255, 59, 48, 0.25);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(255, 59, 48, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 59, 48, 0.2);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 59, 48, 0.35);
+  transform: translateY(-2px);
+  border-color: rgba(255, 59, 48, 0.6);
+  box-shadow: 0 8px 24px rgba(255, 59, 48, 0.3);
+  color: rgba(255, 255, 255, 1);
+}
+
+.btn-danger:active {
+  transform: scale(0.96);
+  background: rgba(255, 59, 48, 0.4);
+}
+
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-danger,
+.btn-light {
+  background: var(--glass-medium);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.btn-outline-danger {
+  border-color: rgba(255, 59, 48, 0.4);
+  color: rgba(255, 200, 200, 0.95);
+}
+
+.btn-outline-danger:hover {
+  background: rgba(255, 59, 48, 0.2);
+  border-color: rgba(255, 59, 48, 0.6);
+  color: rgba(255, 255, 255, 1);
+}
+
+.btn-outline-primary:hover {
+  background: var(--glass-strong);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Icon Buttons - Subtle iOS Style */
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-icon:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-icon--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
+.btn-icon--danger {
+  color: rgba(255, 59, 48, 0.7);
+}
+
+.btn-icon--danger:hover {
+  color: rgba(255, 59, 48, 1);
+  background: rgba(255, 59, 48, 0.15);
+}
+
+.btn-icon--danger:active {
+  background: rgba(255, 59, 48, 0.2);
+}
+
+/* ===================================
+   Lists with Glass Effect
+   =================================== */
+
+.list-group-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 20px;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.list-group-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.list-group-item-action:active {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.98);
+}
+
+/* ===================================
+   Modals with Liquid Glass
+   =================================== */
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.modal-content {
+  background: var(--glass-strong);
+  backdrop-filter: saturate(180%) blur(60px);
+  -webkit-backdrop-filter: saturate(180%) blur(60px);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.modal-header {
+  border-bottom: none;
+  padding: 20px 24px;
+}
+
+.modal-title {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.3px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.modal-body {
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.modal-footer {
+  border-top: none;
+  padding: 20px 24px;
+}
+
+.btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.6;
+}
+
+.btn-close:hover {
+  opacity: 1;
+}
+
+/* ===================================
+   Forms with Glass Effect
+   =================================== */
+
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+/* Standard select dropdown options */
+.form-select option {
+  background: rgba(30, 30, 30, 0.95);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+}
+
+.form-select option:hover,
+.form-select option:focus,
+.form-select option:checked {
+  background: rgba(0, 122, 255, 0.8);
+  color: rgba(255, 255, 255, 1);
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--ios-blue);
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+  outline: none;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+  letter-spacing: -0.1px;
+}
+
+.form-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+}
+
+/* Price styling */
+.price {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 15px;
+}
+
+/* ===================================
+   Tables with Glass
+   =================================== */
+
+.table {
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 0;
+}
+
+.table thead {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.table th {
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 16px;
+}
+
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-bordered {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.table-responsive {
+  border-radius: 20px;
+  padding: 0;
+}
+
+/* ===================================
+   Badges with Glow
+   =================================== */
+
+.badge {
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.text-bg-primary,
+.bg-primary {
+  background: rgba(0, 122, 255, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  color: white !important;
+}
+
+.text-bg-success,
+.bg-success {
+  background: rgba(52, 199, 89, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+  color: white !important;
+}
+
+.text-bg-warning,
+.bg-warning {
+  background: rgba(255, 149, 0, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.text-bg-danger,
+.bg-danger {
+  background: rgba(255, 59, 48, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+  color: white !important;
+}
+
+.text-bg-secondary,
+.bg-secondary {
+  background: rgba(142, 142, 147, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(142, 142, 147, 0.3);
+  color: white !important;
+}
+
+.text-bg-info,
+.bg-info {
+  background: rgba(90, 200, 250, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(90, 200, 250, 0.3);
+  color: white !important;
+}
+
+/* ===================================
+   Alerts
+   =================================== */
+
+.alert {
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.alert-light {
+  background: var(--glass-medium);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.alert-danger {
+  background: rgba(255, 59, 48, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 59, 48, 0.3);
+}
+
+/* ===================================
+   Item Rows (from existing style.css)
+   =================================== */
+
+.item-row {
+  background: var(--glass-medium);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-row:hover {
+  background: var(--glass-strong);
+  transform: translateX(4px);
+}
+
+/* Clickable item rows (whole box is clickable) */
+.item-row--clickable {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.item-row--clickable:hover {
+  background: var(--glass-strong);
+  transform: scale(1.01);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.item-row--clickable:active {
+  transform: scale(0.99);
+}
+
+.item-row__main {
+  color: var(--text-primary);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.item-row__main * {
+  color: inherit !important;
+}
+
+.item-row__main a {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.item-row__main a:hover {
+  color: rgba(255, 255, 255, 1) !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+
+.item-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.item-row__meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Responsive item rows use Grid layout instead of Flex */
+.item-row--responsive {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "figure main actions";
+  align-items: center;
+  gap: var(--gap-4);
+}
+
+.item-row--responsive .item-row__figure {
+  grid-area: figure;
+}
+
+.item-row--responsive .item-row__main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.item-row--responsive .item-row__actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Mobile: Actions on separate row */
+@media (max-width: 576px) {
+  .item-row--responsive {
+    grid-template-columns: auto 1fr !important;
+    grid-template-areas:
+      "figure main"
+      "actions actions" !important;
+  }
+
+  .item-row--responsive .item-row__actions {
+    justify-self: end;
+    width: 100%;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+}
+
+/* ===================================
+   Dividers
+   =================================== */
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  margin: 20px 0;
+}
+
+/* ===================================
+   Loading States
+   =================================== */
+
+.spinner-border {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+#loading {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===================================
+   Tab Navigation (for event detail)
+   =================================== */
+
+.tabs-container {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Center tabs on larger screens with max-width */
+@media (min-width: 768px) {
+  .tabs-container {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.nav-tabs {
+  border: none;
+  background: var(--glass-light);
+  border-radius: 14px;
+  padding: 4px;
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.nav-tabs .nav-link.active {
+  background: var(--glass-strong);
+  color: rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===================================
+   Section Headers and Titles
+   =================================== */
+
+.section-title {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.section-header {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.btn-plain {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.btn-plain:hover {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.toggle-title {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.toggle-title:hover {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+/* ===================================
+   Dropdown Menu
+   =================================== */
+
+.dropdown-menu {
+  background: var(--glass-strong);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.dropdown-item {
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dropdown-divider {
+  margin: 6px 0;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dropdown-header {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 16px 4px;
+}
+
+.dropdown-item.text-danger {
+  color: var(--ios-red) !important;
+}
+
+.dropdown-item.text-danger:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--ios-red) !important;
+}
+
+/* Fix z-index for dropdowns in item rows */
+.item-row {
+  position: relative;
+  z-index: 1;
+}
+
+.item-row .dropdown {
+  position: relative;
+  z-index: 10;
+}
+
+.item-row .dropdown-menu {
+  z-index: 1050;
+}
+
+/* Elevate entire item-row when dropdown is open */
+.item-row:has(.dropdown-menu.show) {
+  z-index: 100;
+}
+
+/* Primary action button (for page-level actions like "New user", "New event") */
+.btn-icon--primary {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ios-blue);
+  border: none;
+  color: white;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.btn-icon--primary:hover {
+  background: rgba(0, 122, 255, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+}
+
+.btn-icon--primary:active {
+  transform: scale(0.95);
+}
+
+/* Glass icon button (for secondary actions like search toggle) */
+.btn-icon--glass {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--glass-medium);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.btn-icon--glass:hover {
+  background: var(--glass-strong);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-icon--glass:active {
+  transform: scale(0.95);
+}
+
+/* ===================================
+   User Menu (top right)
+   =================================== */
+
+.nav-item.dropdown {
+  background: var(--glass-light);
+  border-radius: 20px;
+  padding: 4px 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.nav-link.dropdown-toggle {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ===================================
+   Animations
+   =================================== */
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.card,
+.list-group,
+.alert {
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-content {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
+
+@media (min-width: 768px) {
+  main.container {
+    padding: 0 40px 32px;
+  }
+
+  .ios-bottom-nav {
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 1200px) {
+  main.container {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+}
+
+/* ===================================
+   Dark Mode Enhancements
+   =================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-strong: rgba(30, 30, 30, 0.8);
+    --glass-medium: rgba(30, 30, 30, 0.6);
+    --glass-light: rgba(30, 30, 30, 0.4);
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.65);
+    --text-tertiary: rgba(255, 255, 255, 0.45);
+  }
+}
+
+/* ===================================
+   Hide Bootstrap Elements We Don't Need
+   =================================== */
+
+.navbar-toggler {
+  display: none !important;
+}
+
+/* ===================================
+   Link Colors - All White
+   =================================== */
+
+a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+a:not(.btn):not(.nav-link):not(.nav-tab):not(.dropdown-item) {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+a:not(.btn):not(.nav-link):not(.nav-tab):not(.dropdown-item):hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Override Bootstrap link colors */
+.link-primary,
+.link-secondary,
+.text-primary:not(.badge) {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.link-primary:hover,
+.link-secondary:hover {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+/* ===================================
+   Text and Heading Colors
+   =================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+}
+
+p {
+  color: var(--text-primary);
+}
+
+small, .small {
+  color: var(--text-secondary);
+}
+
+strong, b, .fw-bold, .fw-semibold {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-dark {
+  color: var(--text-primary) !important;
+}
+
+.text-body {
+  color: var(--text-primary) !important;
+}
+
+.text-white {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+/* Ensure all Bootstrap text utilities use white */
+.text-primary {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+label {
+  color: var(--text-primary);
+}
+
+span {
+  color: inherit;
+}
+
+div {
+  color: inherit;
+}
+
+/* Adjust TomSelect for glass theme */
+.ts-dropdown {
+  background: var(--glass-strong);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  z-index: 1060 !important; /* Higher than Bootstrap modal (1055) and modal-backdrop (1050) */
+  position: absolute !important;
+}
+
+/* Even higher z-index when inside modals to ensure proper stacking */
+.modal .ts-dropdown,
+.modal-body .ts-dropdown {
+  z-index: 1060 !important;
+}
+
+.ts-dropdown .option {
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+}
+
+.ts-dropdown .option:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.ts-dropdown .option.active {
+  background: rgba(0, 122, 255, 0.6) !important;
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.ts-dropdown .option.selected {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* TomSelect control - remove double input appearance */
+.ts-wrapper {
+  position: relative;
+}
+
+.ts-control {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 8px 12px !important;
+  min-height: 40px !important;
+  box-shadow: none !important;
+}
+
+.ts-control input {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Remove any Bootstrap form-control styling that might conflict */
+.ts-wrapper .form-select,
+.ts-wrapper .form-control {
+  display: none !important;
+}
+
+/* Ensure wrapper doesn't have form styling */
+.ts-wrapper.form-select,
+.ts-wrapper.form-control {
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  min-height: auto !important;
+}
+
+/* ===================================
+   Error Box Styling
+   =================================== */
+
+#errorBox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 500px;
+  width: calc(100% - 40px);
+  padding: 2rem;
+  background: rgba(255, 59, 48, 0.15);
+  backdrop-filter: saturate(180%) blur(40px);
+  -webkit-backdrop-filter: saturate(180%) blur(40px);
+  border: 1.5px solid rgba(255, 59, 48, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 16px 64px rgba(255, 59, 48, 0.3);
+  z-index: 2000;
+}
+
+#errorBox .mb-3 {
+  white-space: pre-line; /* Preserve line breaks */
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+#errorBox .btn-primary,
+#errorBox .btn-outline-light {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  padding: 12px 32px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+#errorBox .btn-primary {
+  background: var(--glass-strong);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+#errorBox .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+#errorBox .btn-primary:active {
+  transform: translateY(0);
+}
+
+#errorBox .btn-outline-light {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+#errorBox .btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+}
+
+#errorBox .btn-outline-light:active {
+  transform: translateY(0);
+}
+
+#errorBox .text-muted {
+  opacity: 0.6;
+  margin-top: 1rem;
+}
+
+/* ===================================
+   Avatar Styling (iOS Dark Theme)
+   =================================== */
+
+.avatar {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.avatar[data-initials]:not(:has(img)) {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Ensure avatar buttons have transparent backgrounds */
+.avatar-btn {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ===================================
+   Dropzone Styling (iOS Dark Theme)
+   =================================== */
+
+.dropzone {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+  border: 2px dashed rgba(255, 255, 255, 0.25) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dropzone:hover,
+.dropzone.dz-drag-hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.01) !important;
+}
+
+.dropzone .dz-message {
+  color: rgba(255, 255, 255, 0.85) !important;
+  margin: 0 !important;
+}
+
+.dropzone .dz-message i {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 32px !important;
+  margin-bottom: 12px !important;
+}
+
+.dropzone .dz-preview {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+.dropzone .dz-preview .dz-image {
+  border-radius: 8px !important;
+}
+
+.dropzone .dz-preview .dz-details {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dropzone .dz-preview .dz-filename,
+.dropzone .dz-preview .dz-size {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dropzone .dz-preview .dz-error-message {
+  background: rgba(255, 59, 48, 0.25) !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+  border: 1px solid rgba(255, 59, 48, 0.4) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 8px !important;
+}
+
+.dropzone .dz-preview .dz-success-mark,
+.dropzone .dz-preview .dz-error-mark {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dropzone .dz-preview .dz-remove {
+  color: rgba(255, 59, 48, 0.85) !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.dropzone .dz-preview .dz-remove:hover {
+  color: rgba(255, 59, 48, 1) !important;
+  text-decoration: underline !important;
+}
