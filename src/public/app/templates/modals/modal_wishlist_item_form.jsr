@@ -5,11 +5,159 @@
 </div>
 
 <div class="modal-body">
+  <!-- Nav tabs: URL Import vs Manual Entry (only show for new items) -->
+  {{if !item || !item.id}}
+  <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tabUrlImport" data-bs-toggle="tab" data-bs-target="#paneUrlImport" type="button" role="tab" aria-selected="true">
+        <i class="fa-solid fa-link"></i> URL
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tabManual" data-bs-toggle="tab" data-bs-target="#paneManual" type="button" role="tab" aria-selected="false">
+        <i class="fa-solid fa-pen"></i> Manuell
+      </button>
+    </li>
+  </ul>
+  {{/if}}
+
   <form id="wishlistForm"
         action="{{:action || '/api/wishlists'}}"
         data-method="{{:method || (item && item.id ? 'PATCH' : 'POST')}}"
-        data-send="json">
+        data-send="json"
+        data-no-formhandler="true"
+        data-emit-entity="wishlist"
+        data-emit-id-path="data.id">
 
+    <input type="hidden" name="recipient_user_id"
+           value="{{:(item && item.recipient_user_id) || recipient_user_id || ''}}">
+
+    {{if !item || !item.id}}
+    <div class="tab-content">
+      <!-- Tab 1: Import from URL -->
+      <div class="tab-pane fade show active" id="paneUrlImport" role="tabpanel">
+        <!-- URL Input -->
+        <div class="mb-3">
+          <label class="form-label">Product URL <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="url" id="wishlistProductUrl" class="form-control" placeholder="https://www.elkjop.no/product/...">
+            <button type="button" id="wishlistFetchMetadataBtn" class="btn btn-primary">
+              <i class="fa-solid fa-download"></i> Fetch
+            </button>
+          </div>
+          <div class="form-text">Paste a product URL from an online store</div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="wishlistFetchingIndicator" class="alert alert-info d-none">
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Fetching product information...
+        </div>
+
+        <!-- Preview area (hidden until metadata is fetched) -->
+        <div id="wishlistProductPreview" class="d-none">
+          <!-- Product Image -->
+          <div class="mb-3 text-center" id="wishlistProductImageContainer" style="display: none;">
+            <img id="wishlistProductImage" src="" alt="Product" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
+          </div>
+
+          <!-- Product Name -->
+          <div class="mb-3">
+            <label class="form-label">Product Name <span class="text-danger">*</span></label>
+            <input type="text" id="wishlistProductName" class="form-control">
+            <div id="duplicateWarning" class="alert alert-warning mt-2 d-none">
+              <i class="fa-solid fa-exclamation-triangle"></i> A product with this name already exists and will be used.
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea id="wishlistProductDescription" class="form-control" rows="3"></textarea>
+          </div>
+
+          <!-- Price -->
+          <div class="mb-3">
+            <label class="form-label">Price (Optional)</label>
+            <input type="text" id="wishlistProductPrice" class="form-control" placeholder="e.g., 999">
+          </div>
+
+          <!-- Store the metadata -->
+          <input type="hidden" id="wishlistProductImageUrl">
+          <input type="hidden" id="wishlistProductSourceUrl">
+          <input type="hidden" id="wishlistProductSourceTitle">
+          <input type="hidden" id="wishlistExistingProductId">
+        </div>
+
+        <div class="error-message d-none alert alert-danger"></div>
+      </div>
+
+      <!-- Tab 2: Manual Entry -->
+      <div class="tab-pane fade" id="paneManual" role="tabpanel">
+        <!-- Product -->
+        <div class="mb-3">
+          <label class="form-label">Product</label>
+          <select
+            name="product_id"
+            class="form-select"
+            data-tomselect="product-single"
+            data-selected-product-id="{{:(item && item.product_id) || product_id || ''}}"
+            data-selected-product-name="{{:(item && item.product_name) || product_name || ''}}"
+          ></select>
+          <input type="hidden"
+                 name="product_name"
+                 value="{{:(item && item.product_name) || product_name || ''}}"
+                 data-product-name>
+          <div class="form-text">Type to search or create a new product.</div>
+        </div>
+
+        <!-- Links -->
+        <div class="mb-3">
+          <label class="form-label">Links (optional)</label>
+
+          <input name="links[]" type="url" class="form-control mb-2"
+                 value="{{:(item && item.links && item.links[0] && (item.links[0].url || item.links[0]))
+                        || (links && links[0] && (links[0].url || links[0])) || ''}}"
+                 placeholder="https://store.example/item-1">
+
+          <input name="links[]" type="url" class="form-control mb-2"
+                 value="{{:(item && item.links && item.links[1] && (item.links[1].url || item.links[1]))
+                        || (links && links[1] && (links[1].url || links[1])) || ''}}"
+                 placeholder="https://store.example/item-2">
+
+          <input name="links[]" type="url" class="form-control"
+                 value="{{:(item && item.links && item.links[2] && (item.links[2].url || item.links[2]))
+                        || (links && links[2] && (links[2].url || links[2])) || ''}}"
+                 placeholder="https://store.example/item-3">
+        </div>
+
+        <!-- Price (int) -->
+        <div class="mb-3">
+          <label class="form-label">Price</label>
+          <input name="default_price" type="number" inputmode="numeric" step="1" min="0" class="form-control"
+                 value="{{:(item && item.price) || default_price || ''}}">
+          <div class="form-text">Optional. Saved on the product (no decimals).</div>
+        </div>
+
+        <!-- Priority -->
+        <div class="mb-3">
+          <label class="form-label">Priority</label>
+          <input name="priority" type="number" min="1" class="form-control"
+                 value="{{:(item && item.priority) || priority || ''}}">
+          <div class="form-text">Lower number ⇒ higher priority. Used for sorting.</div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-control" rows="3">{{:(item && item.notes) || notes || ''}}</textarea>
+        </div>
+
+        <div class="error-message d-none"></div>
+      </div>
+    </div>
+    {{else}}
+    <!-- Edit mode: show all fields without tabs -->
     <!-- Product -->
     <div class="mb-3">
       <label class="form-label">Product</label>
@@ -32,17 +180,17 @@
       <label class="form-label">Links (optional)</label>
 
       <input name="links[]" type="url" class="form-control mb-2"
-             value="{{:(item && item.links && item.links[0] && (item.links[0].url || item.links[0])) 
+             value="{{:(item && item.links && item.links[0] && (item.links[0].url || item.links[0]))
                     || (links && links[0] && (links[0].url || links[0])) || ''}}"
              placeholder="https://store.example/item-1">
 
       <input name="links[]" type="url" class="form-control mb-2"
-             value="{{:(item && item.links && item.links[1] && (item.links[1].url || item.links[1])) 
+             value="{{:(item && item.links && item.links[1] && (item.links[1].url || item.links[1]))
                     || (links && links[1] && (links[1].url || links[1])) || ''}}"
              placeholder="https://store.example/item-2">
 
       <input name="links[]" type="url" class="form-control"
-             value="{{:(item && item.links && item.links[2] && (item.links[2].url || item.links[2])) 
+             value="{{:(item && item.links && item.links[2] && (item.links[2].url || item.links[2]))
                     || (links && links[2] && (links[2].url || links[2])) || ''}}"
              placeholder="https://store.example/item-3">
     </div>
@@ -58,7 +206,7 @@
     <!-- Priority -->
     <div class="mb-3">
       <label class="form-label">Priority</label>
-      <input name="priority" type="number" min="1" class="form-control" 
+      <input name="priority" type="number" min="1" class="form-control"
              value="{{:(item && item.priority) || priority || ''}}">
       <div class="form-text">Lower number ⇒ higher priority. Used for sorting.</div>
     </div>
@@ -69,14 +217,14 @@
       <textarea name="notes" class="form-control" rows="3">{{:(item && item.notes) || notes || ''}}</textarea>
     </div>
 
-    <input name="recipient_user_id" type="hidden" 
-           value="{{:(item && item.recipient_user_id) || recipient_user_id || ''}}">
     <div class="error-message d-none"></div>
+    {{/if}}
   </form>
 </div>
 
 <div class="modal-footer">
-  <button type="submit" form="wishlistForm" class="btn btn-primary">
-    {{:submitLabel || (item && item.id ? 'Save' : 'Add')}}
+  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  <button type="submit" form="wishlistForm" id="saveWishlistBtn" class="btn btn-primary">
+    <i class="fa-solid fa-save"></i> {{:submitLabel || (item && item.id ? 'Save' : 'Add Wish')}}
   </button>
 </div>

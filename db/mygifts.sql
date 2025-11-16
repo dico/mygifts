@@ -70,9 +70,11 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS products (
   id                CHAR(26) PRIMARY KEY,
   household_id      CHAR(26) NOT NULL,             -- product belongs to exactly one household
-  name              VARCHAR(200) NOT NULL,         -- e.g. "Yellow candle holder"
+  name              VARCHAR(200) NOT NULL,         -- e.g. "Yellow candle holder" (editable by user)
   description       TEXT,
   url               VARCHAR(500),
+  source_title      VARCHAR(200) NULL,             -- original scraped title (never changes, for duplicate detection)
+  source_domain     VARCHAR(255) NULL,             -- normalized domain for duplicate detection (e.g. "netonnet.no")
   image_url         VARCHAR(500),
   default_price     DECIMAL(12,2) NULL,            -- currency with 2 decimals
   currency_code     CHAR(3) NOT NULL DEFAULT 'NOK',
@@ -80,7 +82,9 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_products_household
     FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE,
-  INDEX idx_products_household (household_id)
+  INDEX idx_products_household (household_id),
+  INDEX idx_products_source_domain (source_domain),
+  INDEX idx_products_source_title_domain (household_id, source_title, source_domain)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS product_links (

@@ -203,6 +203,42 @@ async function openFromButton(btn) {
       // ✅ Scope TomSelect til selve modalens DOM
       try { unenhance = initProductSelect(modalEl); } catch (e) { console.warn('[ModalMini] initProductSelect failed', e); }
 
+      // ✅ Bind received gift quick modal handler
+      if (template === 'modals/modal_received_gift_quick') {
+        import('./receivedGiftQuickHandler.js').then(m => {
+          m.bindReceivedGiftQuickModal(modalEl);
+        }).catch(e => {
+          console.error('[ModalMini] receivedGiftQuickHandler failed', e);
+        });
+      }
+
+      // ✅ Bind product URL import modal handler
+      if (template === 'modals/modal_product_url_import') {
+        import('./productUrlImportHandler.js').then(m => {
+          m.bindProductUrlImportModal(modalEl);
+        }).catch(e => {
+          console.error('[ModalMini] productUrlImportHandler failed', e);
+        });
+      }
+
+      // ✅ Bind wishlist URL import modal handler
+      if (template === 'modals/modal_wishlist_item_form') {
+        import('./wishlistUrlImportHandler.js').then(m => {
+          m.bindWishlistUrlImportModal(modalEl);
+        }).catch(e => {
+          console.error('[ModalMini] wishlistUrlImportHandler failed', e);
+        });
+      }
+
+      // ✅ Bind gift URL import modal handler
+      if (template === 'modals/modal_gift_form') {
+        import('./giftUrlImportHandler.js').then(m => {
+          m.bindGiftUrlImportModal(modalEl);
+        }).catch(e => {
+          console.error('[ModalMini] giftUrlImportHandler failed', e);
+        });
+      }
+
       modalEl.querySelectorAll('form').forEach((form) => {
         let formAction = form.getAttribute('action') || '';
         if (action) {
@@ -223,7 +259,7 @@ async function openFromButton(btn) {
           import('./modalUpload.js').then(m => m.bindGenericUpload(modalEl)).catch(() => {});
           if (emitEntity && !form.dataset.emitEntity) form.dataset.emitEntity = emitEntity;
           if (emitIdPath && !form.dataset.emitIdPath) form.dataset.emitIdPath = emitIdPath;
-        } else {
+        } else if (!form.dataset.noFormhandler) {
           new FormHandler(form, {
             resetOnSuccess: false,
             onSuccess: (resp) => {

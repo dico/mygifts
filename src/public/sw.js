@@ -1,5 +1,5 @@
 // Service Worker for MyGifts PWA
-const CACHE_NAME = 'mygifts-v3';
+const CACHE_NAME = 'mygifts-v5';
 const urlsToCache = [
   '/app/',
   '/app/index.html',

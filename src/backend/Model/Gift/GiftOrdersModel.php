@@ -502,7 +502,8 @@ class GiftOrdersModel
             // ---- Produkt: bruk id hvis gitt, ellers opprett/finne via product_name ----
             $productId = isset($payload['product_id']) && $payload['product_id'] !== '' ? (string)$payload['product_id'] : null;
             if (!$productId) {
-                $pname = trim((string)($payload['product_name'] ?? ''));
+                // Support both product_name and product_name_new (from quick-add modal)
+                $pname = trim((string)($payload['product_name_new'] ?? $payload['product_name'] ?? ''));
                 if ($pname !== '') {
                     // Opprett eller finn eksisterende (case-insensitivt innenfor husholdning)
                     $productId = $this->findOrCreateProductByName($hid, $pname);
@@ -515,10 +516,21 @@ class GiftOrdersModel
                 if (!$prod || $prod->household_id !== $hid) {
                     throw new \RuntimeException('Product not found in tenant', 403);
                 }
+
+                // Håndter photo upload hvis produktet ble opprettet og vi har en fil
+                if (isset($payload['photo']) && is_array($payload['photo'])) {
+                    $productsModel = new \App\Model\Product\ProductsModel();
+                    try {
+                        $productsModel->uploadImage($requesterUserId, $productId, $payload['photo']);
+                    } catch (\Throwable $e) {
+                        error_log('[GiftOrdersModel.create] Photo upload failed: '.$e->getMessage());
+                        // Continue even if photo upload fails
+                    }
+                }
             }
 
             $status = (string)($payload['status'] ?? 'idea');
-            if (!in_array($status, ['idea','reserved','purchased','given','cancelled'], true)) {
+            if (!in_array($status, ['idea','reserved','purchased','given','received','cancelled'], true)) {
                 throw new \InvalidArgumentException('invalid status', 422);
             }
 

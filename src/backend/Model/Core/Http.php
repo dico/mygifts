@@ -45,4 +45,32 @@ class Http
         $j = json_decode($raw, true);
         return is_array($j) ? $j : [];
     }
+
+    /**
+     * Henter request body - støtter både JSON og FormData/multipart.
+     * Returnerer array med payload data.
+     */
+    public static function body(): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+
+        // Sjekk om det er multipart/form-data eller application/x-www-form-urlencoded
+        if (stripos($contentType, 'multipart/form-data') !== false ||
+            stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
+            // Data er i $_POST
+            return $_POST;
+        }
+
+        // Ellers, prøv JSON
+        return self::jsonBody();
+    }
+
+    /**
+     * Henter opplastede filer fra $_FILES.
+     * Returnerer array med fil-info.
+     */
+    public static function files(): array
+    {
+        return $_FILES;
+    }
 }

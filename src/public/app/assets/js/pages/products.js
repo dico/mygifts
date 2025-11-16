@@ -113,7 +113,15 @@ async function load(q = '') {
 
     const url = `/api/products?${params.toString()}`;
     const res = await api(url);
-    const products = res?.data?.products || res?.products || [];
+    let products = res?.data?.products || res?.products || [];
+
+    // Sort by last modified (updated_at or created_at) - most recent first
+    products = products.sort((a, b) => {
+      const dateA = new Date(a.updated_at || a.created_at || 0);
+      const dateB = new Date(b.updated_at || b.created_at || 0);
+      return dateB - dateA; // Descending order (newest first)
+    });
+
     await render('products', { title: 'Products', loading: false, q, products });
     attachSearchListener(); // Re-attach listener after render
     attachToggleListener(); // Re-attach toggle listener after render

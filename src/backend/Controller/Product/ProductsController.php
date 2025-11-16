@@ -177,4 +177,56 @@ class ProductsController extends BaseController
             return $this->error('Failed to remove image', 500);
         }
     }
+
+    /** POST /products/extract-url - Hent metadata fra URL */
+    public function extractUrl(): array {
+        try {
+            CurrentUser::id(); // Sjekk at bruker er autentisert
+            $body = \App\Model\Core\Http::jsonBody();
+            $url = $body['url'] ?? '';
+
+            if (!$url) {
+                throw new \InvalidArgumentException('URL is required', 422);
+            }
+
+            $metadata = \App\Model\Utils\UrlMetadataExtractor::extract($url);
+            return $this->ok($metadata);
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 422));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 500));
+        } catch (\Throwable $e) {
+            error_log('[ProductsController.extractUrl] '.$e->getMessage());
+            return $this->error('Failed to extract metadata from URL', 500);
+        }
+    }
+
+    /** POST /products/find-by-name-domain - Find product by name and domain for duplicate detection */
+    public function findByNameAndDomain(): array {
+        try {
+            $me = CurrentUser::id();
+            $body = \App\Model\Core\Http::jsonBody();
+            $name = trim($body['name'] ?? '');
+            $url = trim($body['url'] ?? '');
+
+            if (!$name || !$url) {
+                throw new \InvalidArgumentException('name and url are required', 422);
+            }
+
+            $product = $this->model->findByNameAndDomain($me, $name, $url);
+
+            if ($product) {
+                return $this->ok(['product' => $product]);
+            } else {
+                return $this->error('No matching product found', 404);
+            }
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 422));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), (int)($e->getCode() ?: 403));
+        } catch (\Throwable $e) {
+            error_log('[ProductsController.findByNameAndDomain] '.$e->getMessage());
+            return $this->error('Failed to find product', 500);
+        }
+    }
 }

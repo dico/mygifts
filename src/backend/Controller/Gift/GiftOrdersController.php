@@ -39,7 +39,14 @@ class GiftOrdersController extends BaseController
     public function create(): array {
         try {
             $me = CurrentUser::id();
-            $body = Http::jsonBody();
+            $body = Http::body(); // Støtter både JSON og FormData
+            $files = Http::files(); // Hent opplastede filer
+
+            // Legg til photo hvis den er lastet opp
+            if (!empty($files['photo']) && $files['photo']['error'] === UPLOAD_ERR_OK) {
+                $body['photo'] = $files['photo'];
+            }
+
             $orderId = $this->model->create($me, $body);
             return $this->ok(['gift_order_id' => $orderId], 201);
         } catch (\InvalidArgumentException $e) {

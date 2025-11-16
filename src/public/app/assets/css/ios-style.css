@@ -82,6 +82,47 @@
   background-size: cover;
 }
 
+/* User-selected wallpaper backgrounds */
+.ios-app.wallpaper-spring::before {
+  background-image: url('/app/assets/images/wallpapers/spring.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-summer::before {
+  background-image: url('/app/assets/images/wallpapers/summer.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-autumn::before {
+  background-image: url('/app/assets/images/wallpapers/autumn.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-winter::before {
+  background-image: url('/app/assets/images/wallpapers/winter.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-winter_01::before {
+  background-image: url('/app/assets/images/wallpapers/winter_01.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-abstract_01::before {
+  background-image: url('/app/assets/images/wallpapers/abstract_01.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-abstract_02::before {
+  background-image: url('/app/assets/images/wallpapers/abstract_02.jpg');
+  background-size: cover;
+}
+
+.ios-app.wallpaper-abstract_03::before {
+  background-image: url('/app/assets/images/wallpapers/abstract_03.jpg');
+  background-size: cover;
+}
+
 /* Dark overlay to make glass effects pop */
 .ios-app::after {
   content: '';
@@ -278,6 +319,22 @@ main.container {
 
 .text-muted {
   color: var(--text-secondary) !important;
+}
+
+/* Stats cards - ensure consistent height and prevent text wrapping */
+.card-body.text-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100px;
+}
+
+/* Mobile: smaller font for stats card labels to prevent wrapping */
+@media (max-width: 576px) {
+  .card-body.text-center .small {
+    font-size: 0.7rem !important;
+    white-space: nowrap;
+  }
 }
 
 /* ===================================
@@ -581,10 +638,21 @@ main.container {
 .table {
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 0;
+  /* Override Bootstrap CSS variables for dark theme */
+  --bs-table-color: rgba(255, 255, 255, 0.85);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: rgba(255, 255, 255, 0.08);
+  --bs-table-striped-bg: transparent;
+  --bs-table-striped-color: rgba(255, 255, 255, 0.85);
+  --bs-table-active-bg: transparent;
+  --bs-table-active-color: rgba(255, 255, 255, 0.85);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.03);
+  --bs-table-hover-color: rgba(255, 255, 255, 0.85);
 }
 
 .table thead {
   background: rgba(255, 255, 255, 0.05);
+  --bs-table-bg: rgba(255, 255, 255, 0.05);
 }
 
 .table th {
@@ -1488,4 +1556,93 @@ div {
 .dropzone .dz-preview .dz-remove:hover {
   color: rgba(255, 59, 48, 1) !important;
   text-decoration: underline !important;
+}
+
+/* ===================================
+   Wallpaper Selection Grid
+   =================================== */
+
+.wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 576px) {
+  .wallpaper-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+.wallpaper-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.wallpaper-option:hover .wallpaper-preview {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.wallpaper-option:active .wallpaper-preview {
+  transform: scale(0.95);
+}
+
+.wallpaper-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  border: 3px solid transparent;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--glass-medium);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallpaper-preview-auto {
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.3) 0%,
+    rgba(118, 75, 162, 0.3) 25%,
+    rgba(52, 199, 89, 0.3) 50%,
+    rgba(255, 149, 0, 0.3) 75%,
+    rgba(0, 122, 255, 0.3) 100%
+  );
+}
+
+.wallpaper-preview-auto i {
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wallpaper-option.active .wallpaper-preview {
+  border-color: var(--ios-blue);
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3), 0 8px 24px rgba(0, 122, 255, 0.4);
+}
+
+.wallpaper-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.wallpaper-option.active .wallpaper-label {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.wallpaper-option:hover .wallpaper-label {
+  color: rgba(255, 255, 255, 0.95);
 }

@@ -13,6 +13,72 @@
   </div>
 </div>
 
+<!-- Wallpaper Selection Card -->
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="mb-3">Background Wallpaper</h5>
+    <p class="text-muted mb-3 small">Choose a background image for your app</p>
+
+    <div class="wallpaper-grid" id="wallpaperGrid">
+      <!-- Auto wallpaper (seasonal) -->
+      <div class="wallpaper-option" data-wallpaper="auto">
+        <div class="wallpaper-preview wallpaper-preview-auto">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+        <span class="wallpaper-label">Auto (Seasonal)</span>
+      </div>
+
+      <!-- Spring -->
+      <div class="wallpaper-option" data-wallpaper="spring">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/spring.jpg')"></div>
+        <span class="wallpaper-label">Spring</span>
+      </div>
+
+      <!-- Summer -->
+      <div class="wallpaper-option" data-wallpaper="summer">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/summer.jpg')"></div>
+        <span class="wallpaper-label">Summer</span>
+      </div>
+
+      <!-- Autumn -->
+      <div class="wallpaper-option" data-wallpaper="autumn">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/autumn.jpg')"></div>
+        <span class="wallpaper-label">Autumn</span>
+      </div>
+
+      <!-- Winter -->
+      <div class="wallpaper-option" data-wallpaper="winter">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/winter.jpg')"></div>
+        <span class="wallpaper-label">Winter</span>
+      </div>
+
+      <!-- Winter 01 -->
+      <div class="wallpaper-option" data-wallpaper="winter_01">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/winter_01.jpg')"></div>
+        <span class="wallpaper-label">Winter Alt</span>
+      </div>
+
+      <!-- Abstract 01 -->
+      <div class="wallpaper-option" data-wallpaper="abstract_01">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/abstract_01.jpg')"></div>
+        <span class="wallpaper-label">Abstract 1</span>
+      </div>
+
+      <!-- Abstract 02 -->
+      <div class="wallpaper-option" data-wallpaper="abstract_02">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/abstract_02.jpg')"></div>
+        <span class="wallpaper-label">Abstract 2</span>
+      </div>
+
+      <!-- Abstract 03 -->
+      <div class="wallpaper-option" data-wallpaper="abstract_03">
+        <div class="wallpaper-preview" style="background-image: url('/app/assets/images/wallpapers/abstract_03.jpg')"></div>
+        <span class="wallpaper-label">Abstract 3</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="list-group mb-4">
   <a href="/app/settings/templates" class="list-group-item list-group-item-action nav-link">
     <div class="d-flex w-100 justify-content-between align-items-center">

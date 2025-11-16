@@ -84,6 +84,8 @@ class Router
                 // PRODUCTS
                 $r->addRoute('GET',    '/products',            [ProductsController::class, 'index']);
                 $r->addRoute('POST',   '/products',            [ProductsController::class, 'create']);
+                $r->addRoute('POST',   '/products/extract-url', [ProductsController::class, 'extractUrl']);
+                $r->addRoute('POST',   '/products/find-by-name-domain', [ProductsController::class, 'findByNameAndDomain']);
                 $r->addRoute('GET',    "/products/{id:$ULID}", [ProductsController::class, 'show']);
                 $r->addRoute('PATCH',  "/products/{id:$ULID}", [ProductsController::class, 'update']);
                 $r->addRoute('DELETE', "/products/{id:$ULID}", [ProductsController::class, 'destroy']);

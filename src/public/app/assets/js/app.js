@@ -2,6 +2,7 @@
 import { api } from './Remote.js';
 import { setupRoutes, startRouter, requestRouteRefresh } from './routes.js';
 import { initModalLinks } from './modalLinks.js';
+import { applyWallpaper, getStoredWallpaper } from './wallpaper.js';
 
 const qs = (s) => document.querySelector(s);
 
@@ -49,35 +50,11 @@ function setActiveNav() {
   });
 }
 
-// Set seasonal wallpaper based on current month
-function setSeasonalWallpaper() {
-  const month = new Date().getMonth(); // 0 = January, 11 = December
-  const body = document.querySelector('.ios-app');
-
-  // Remove all season classes
-  body.classList.remove('season-spring', 'season-summer', 'season-autumn', 'season-winter');
-
-  // Determine season
-  let season;
-  if (month >= 2 && month <= 4) {
-    season = 'spring'; // March, April, May
-  } else if (month >= 5 && month <= 7) {
-    season = 'summer'; // June, July, August
-  } else if (month >= 8 && month <= 10) {
-    season = 'autumn'; // September, October, November
-  } else {
-    season = 'winter'; // December, January, February
-  }
-
-  body.classList.add(`season-${season}`);
-  console.log('[wallpaper] Set season:', season);
-}
-
 export async function initApp() {
   console.log('[app] initApp start');
 
-  // Set seasonal wallpaper
-  setSeasonalWallpaper();
+  // Apply wallpaper (user preference or seasonal)
+  applyWallpaper(getStoredWallpaper());
 
   // Register service worker for PWA functionality
   if ('serviceWorker' in navigator) {

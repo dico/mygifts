@@ -129,7 +129,27 @@
                           type="button"
                         >
                           <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
-                          Edit
+                          Edit wish
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          class="dropdown-item"
+                          data-mm="open"
+                          data-mm-template="modals/modal_product_form"
+                          data-mm-title="Edit product"
+                          data-mm-submit-label="Save"
+                          data-mm-action="/api/products/{{:product_id}}"
+                          data-mm-method="PATCH"
+                          data-mm-sources='[
+                            {"key":"product","url":"/api/products/{{:product_id}}"}
+                          ]'
+                          data-mm-emit-entity="product"
+                          data-product-id="{{:product_id}}"
+                          type="button"
+                        >
+                          <i class="fa-solid fa-box me-2" aria-hidden="true"></i>
+                          Edit product
                         </button>
                       </li>
                       <li><hr class="dropdown-divider"></li>
@@ -141,7 +161,7 @@
                           type="button"
                         >
                           <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
-                          Delete
+                          Delete wish
                         </button>
                       </li>
                     </ul>

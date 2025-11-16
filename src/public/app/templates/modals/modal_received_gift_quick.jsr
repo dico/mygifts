@@ -1,0 +1,118 @@
+<!-- src/public/app/templates/modals/modal_received_gift_quick.jsr -->
+<div class="modal-header">
+  <h5 class="modal-title">Add Received Gift</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <!-- Nav tabs: New Gift vs Existing Product -->
+  <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tabNewGift" data-bs-toggle="tab" data-bs-target="#paneNewGift" type="button" role="tab" aria-selected="true">New Gift</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tabExisting" data-bs-toggle="tab" data-bs-target="#paneExisting" type="button" role="tab" aria-selected="false">Existing Product</button>
+    </li>
+  </ul>
+
+  <form id="receivedGiftForm"
+      action=""
+      data-method="POST"
+      data-send="json"
+      data-no-formhandler="true"
+      data-order-patch="true"
+      data-emit-entity="order"
+      data-emit-id-path="data.gift_order_id">
+
+    <!-- Event ID -->
+    <input type="hidden" name="event_id"
+           value="{{:(~root.event && ~root.event.id) ? ~root.event.id : ((~root.eventId) ? ~root.eventId : '')}}">
+
+    <!-- Status: always 'received' -->
+    <input type="hidden" name="status" value="received">
+
+    <!-- Recipient user IDs (pre-filled from context) -->
+    {{if order && order.recipients && order.recipients.length}}
+      {{for order.recipients}}
+        <input type="hidden" name="recipient_user_ids[]" value="{{:id}}">
+      {{/for}}
+    {{/if}}
+
+    <div class="tab-content">
+      <!-- Tab 1: New Gift -->
+      <div class="tab-pane fade show active" id="paneNewGift" role="tabpanel">
+        <!-- Photo Upload -->
+        <div class="mb-3">
+          <label class="form-label">Photo (Optional)</label>
+          <input type="file" id="newGiftPhoto" name="photo" accept="image/*" capture="environment" style="display: none;">
+
+          <!-- Upload button (shown when no image) -->
+          <label for="newGiftPhoto" id="photoUploadBtn" class="btn btn-outline-primary btn-lg w-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 150px; border: 2px dashed rgba(255, 255, 255, 0.3); cursor: pointer; margin-bottom: 0;">
+            <i class="fa-solid fa-camera fa-3x mb-2" aria-hidden="true"></i>
+            <div class="fw-semibold">Take or Upload Photo</div>
+            <div class="small text-muted mt-1">Tap to use camera or select from gallery</div>
+          </label>
+
+          <!-- Image preview (shown when image selected) -->
+          <div id="photoPreviewContainer" style="display: none;">
+            <div class="position-relative">
+              <img id="photoPreviewImg" src="" alt="Preview" class="img-fluid rounded w-100" style="max-height: 250px; object-fit: contain;">
+              <button type="button" id="removePhotoBtn" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2">
+                <i class="fa-solid fa-times"></i> Remove
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Name -->
+        <div class="mb-3">
+          <label class="form-label">Gift Name <span class="text-danger">*</span></label>
+          <input type="text" name="product_name_new" id="productNameNew" class="form-control" placeholder="e.g., Red sweater">
+        </div>
+      </div>
+
+      <!-- Tab 2: Existing Product -->
+      <div class="tab-pane fade" id="paneExisting" role="tabpanel">
+        <!-- Existing product image preview -->
+        <div id="existingProductPreview" class="mb-3" style="display: none;">
+          <img id="existingProductImg" src="" alt="Product" class="img-fluid rounded" style="max-height: 200px;">
+        </div>
+
+        <!-- Product Select -->
+        <div class="mb-3">
+          <label class="form-label">Search Product</label>
+          <select id="existingProductSelect" name="product_id" class="form-select"
+                  data-tomselect="product-single"
+                  data-selected-product-id="">
+          </select>
+          <div class="form-text">Type to search for existing product.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- From (Giver) - Always visible -->
+    <div class="mb-3">
+      <label class="form-label">From <span class="text-danger">*</span></label>
+      <select name="giver_user_ids[]" multiple class="form-select" data-tomselect="users-multi">
+        {{if order && order.givers && order.givers.length}}
+        {{for order.givers}}
+          <option value="{{:id}}" selected>{{:display_name}}</option>
+        {{/for}}
+        {{/if}}
+      </select>
+    </div>
+
+    <!-- Notes - Always visible -->
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="form-control" rows="2" placeholder="e.g., Size M, blue color">{{:(order && order.notes) ? order.notes : ''}}</textarea>
+    </div>
+
+    <div class="error-message d-none"></div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button type="submit" form="receivedGiftForm" class="btn btn-primary">Add Gift</button>
+</div>
+

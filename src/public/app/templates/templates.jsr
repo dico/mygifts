@@ -1,7 +1,7 @@
 <!-- src/public/app/templates/templates.jsr -->
-<div class="d-flex align-items-center mb-3">
-  <a href="/app/settings" class="btn btn-sm btn-outline-secondary me-3 nav-link">
-    <i class="fa-solid fa-arrow-left"></i> Back to Settings
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="/app/settings" class="nav-link text-decoration-none" style="color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+    <i class="fa-solid fa-arrow-left"></i>
   </a>
   <h2 class="page-title mb-0">Gift Templates</h2>
 </div>

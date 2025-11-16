@@ -226,9 +226,31 @@
                                 type="button"
                               >
                                 <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
-                                Edit
+                                Edit gift
                               </button>
                             </li>
+                            {{if product_id}}
+                            <li>
+                              <button
+                                class="dropdown-item"
+                                data-mm="open"
+                                data-mm-template="modals/modal_product_form"
+                                data-mm-title="Edit product"
+                                data-mm-submit-label="Save"
+                                data-mm-action="/api/products/{{:product_id}}"
+                                data-mm-method="PATCH"
+                                data-mm-sources='[
+                                  {"key":"product","url":"/api/products/{{:product_id}}"}
+                                ]'
+                                data-mm-emit-entity="product"
+                                data-product-id="{{:product_id}}"
+                                type="button"
+                              >
+                                <i class="fa-solid fa-box me-2" aria-hidden="true"></i>
+                                Edit product
+                              </button>
+                            </li>
+                            {{/if}}
                             <li><hr class="dropdown-divider"></li>
                             <li>
                               <button
@@ -238,7 +260,7 @@
                                 type="button"
                               >
                                 <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
-                                Delete
+                                Delete gift
                               </button>
                             </li>
                           </ul>
@@ -304,12 +326,12 @@
               <button
                 type="button"
                 class="btn-icon--primary"
-                title="Add gift for {{:user.display_name}}"
-                aria-label="Add gift for {{:user.display_name}}"
+                title="Add received gift for {{:user.display_name}}"
+                aria-label="Add received gift for {{:user.display_name}}"
                 data-mm="open"
-                data-mm-template="modals/modal_gift_form"
-                data-mm-title="Add gift"
-                data-mm-submit-label="Create gift"
+                data-mm-template="modals/modal_received_gift_quick"
+                data-mm-title="Add Received Gift"
+                data-mm-submit-label="Add Gift"
                 data-mm-action="/api/gift-orders"
                 data-mm-method="POST"
                 data-mm-sources='[
@@ -322,8 +344,7 @@
                 data-mm-preset='{
                   "order": {
                     "recipients": [{"id":"{{:user.id}}","display_name":"{{:user.display_name}}"}],
-                    "recipient_user_ids": ["{{:user.id}}"],
-                    "status": "given"
+                    "status": "received"
                   }
                 }'
               >
@@ -416,9 +437,31 @@
                                 type="button"
                               >
                                 <i class="fa-solid fa-pen me-2" aria-hidden="true"></i>
-                                Edit
+                                Edit gift
                               </button>
                             </li>
+                            {{if product_id}}
+                            <li>
+                              <button
+                                class="dropdown-item"
+                                data-mm="open"
+                                data-mm-template="modals/modal_product_form"
+                                data-mm-title="Edit product"
+                                data-mm-submit-label="Save"
+                                data-mm-action="/api/products/{{:product_id}}"
+                                data-mm-method="PATCH"
+                                data-mm-sources='[
+                                  {"key":"product","url":"/api/products/{{:product_id}}"}
+                                ]'
+                                data-mm-emit-entity="product"
+                                data-product-id="{{:product_id}}"
+                                type="button"
+                              >
+                                <i class="fa-solid fa-box me-2" aria-hidden="true"></i>
+                                Edit product
+                              </button>
+                            </li>
+                            {{/if}}
                             <li><hr class="dropdown-divider"></li>
                             <li>
                               <button
@@ -428,7 +471,7 @@
                                 type="button"
                               >
                                 <i class="fa-solid fa-trash me-2" aria-hidden="true"></i>
-                                Delete
+                                Delete gift
                               </button>
                             </li>
                           </ul>

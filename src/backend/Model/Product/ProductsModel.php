@@ -35,6 +35,66 @@ class ProductsModel
         return $out;
     }
 
+    /**
+     * Ekstraher og normaliser domenet fra en URL for duplikatdeteksjon.
+     * Fjerner www. prefix og returnerer bare domenet (f.eks. "netonnet.no").
+     */
+    private function extractDomain(?string $url): ?string
+    {
+        if (!$url) return null;
+
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? null;
+
+        if (!$host) return null;
+
+        // Fjern www. prefix for konsistent matching
+        $normalized = preg_replace('/^www\./i', '', $host);
+
+        return strtolower($normalized);
+    }
+
+    /**
+     * Finn produkt basert på opprinnelig skrapet tittel og domene (for duplikatdeteksjon).
+     * Matcher på source_title (ikke name) slik at vi finner produktet selv om brukeren har endret navnet.
+     * Returnerer produktet hvis funnet, ellers null.
+     */
+    public function findByNameAndDomain(string $requesterUserId, string $name, string $url): ?array
+    {
+        $hid = Tenant::activeId($requesterUserId);
+        Tenant::assertMembership($hid, $requesterUserId);
+
+        $domain = $this->extractDomain($url);
+        if (!$domain) return null;
+
+        $normalizedTitle = trim(strtolower($name));
+        if ($normalizedTitle === '') return null;
+
+        // Søk etter produkt med matchende source_title og domene
+        // source_title er den opprinnelige skrapede tittelen som aldri endres
+        $r = DB::table('products')
+            ->where('household_id', $hid)
+            ->where('source_domain', $domain)
+            ->whereRaw('LOWER(TRIM(source_title)) = ?', [$normalizedTitle])
+            ->first();
+
+        if (!$r) return null;
+
+        $links = $this->fetchLinks((string)$r->id);
+
+        return [
+            'id'            => (string)$r->id,
+            'name'          => (string)$r->name,  // returnerer brukerens redigerte navn
+            'description'   => $r->description,
+            'url'           => $r->url,
+            'source_title'  => $r->source_title,
+            'source_domain' => $r->source_domain,
+            'image_url'     => $r->image_url,
+            'default_price' => $this->intPriceString($r->default_price),
+            'links'         => array_map(fn($x) => $x['url'], $links),
+        ];
+    }
+
     /** Skriv/overskriv product_links for et produkt. */
     private function persistLinks(string $productId, array $links): void
     {
@@ -122,7 +182,11 @@ class ProductsModel
             $qb->whereRaw('LOWER(name) LIKE ?', [$like]);
         }
 
-        $rows = $qb->orderBy('name')->limit($limit)->get();
+        // Sorter etter sist endret/opprettet (nyeste først)
+        $rows = $qb->orderBy('updated_at', 'desc')
+                   ->orderBy('created_at', 'desc')
+                   ->limit($limit)
+                   ->get();
 
         // Unngå N+1: hent lenker for alle produktene i én runde
         $ids = array_map(fn($r) => (string)$r->id, iterator_to_array($rows));
@@ -181,6 +245,11 @@ class ProductsModel
         }
         $primaryUrl = $links[0] ?? null;
 
+        // Ekstraher domene og lagre opprinnelig tittel for duplikatdeteksjon
+        $sourceDomain = $this->extractDomain($primaryUrl);
+        // Bruk source_title fra frontend hvis den finnes, ellers bruk name
+        $sourceTitle = isset($payload['source_title']) ? (string)$payload['source_title'] : $name;
+
         $id = Id::ulid();
         DB::table('products')->insert([
             'id'            => $id,
@@ -188,6 +257,8 @@ class ProductsModel
             'name'          => $name,
             'description'   => $desc,
             'url'           => $primaryUrl, // speil primærlenke i products.url
+            'source_title'  => $sourceTitle, // opprinnelig tittel for duplikatdeteksjon
+            'source_domain' => $sourceDomain,
             'image_url'     => $img,
             'default_price' => $price,
             'currency_code' => 'NOK',
@@ -264,8 +335,10 @@ class ProductsModel
 
         if ($linksProvided) {
             $upd['url'] = $links[0] ?? null; // speil primærlenke
+            $upd['source_domain'] = $this->extractDomain($links[0] ?? null);
         } elseif (array_key_exists('url', $payload)) {
             $upd['url'] = UrlInspector::normalize((string)$payload['url']);
+            $upd['source_domain'] = $this->extractDomain($upd['url']);
         }
 
         if ($upd) {

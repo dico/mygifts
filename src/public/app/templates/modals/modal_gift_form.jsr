@@ -17,16 +17,92 @@
     <input type="hidden" name="event_id"
            value="{{:(~root.event && ~root.event.id) ? ~root.event.id : ((~root.eventId) ? ~root.eventId : '')}}">
 
-    <!-- Product -->
-    <div class="mb-3">
-      <label class="form-label">Product</label>
-      <select id="giftProduct" name="product_id" class="form-select"
-              data-tomselect="product-single"
-              data-selected-product-id="{{:(order && order.product_id) ? order.product_id : ''}}"
-              data-selected-product-name="{{:(order && order.product_name) ? order.product_name : ''}}">
-      </select>
-      <input type="hidden" name="product_name" id="giftProductName" data-product-name value="">
-      <div class="form-text">Type to search or create a new product.</div>
+    <!-- Product selection with tabs -->
+    <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tabGiftUrl" data-bs-toggle="tab" data-bs-target="#paneGiftUrl" type="button" role="tab" aria-selected="true">
+          <i class="fa-solid fa-link"></i> URL
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tabGiftManual" data-bs-toggle="tab" data-bs-target="#paneGiftManual" type="button" role="tab" aria-selected="false">
+          <i class="fa-solid fa-pen"></i> Manuell
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content mb-3">
+      <!-- Tab 1: Import from URL -->
+      <div class="tab-pane fade show active" id="paneGiftUrl" role="tabpanel">
+        <div class="mb-3">
+          <label class="form-label">Product URL <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input type="url" id="giftProductUrl" class="form-control" placeholder="https://www.elkjop.no/product/...">
+            <button type="button" id="giftFetchMetadataBtn" class="btn btn-primary">
+              <i class="fa-solid fa-download"></i> Fetch
+            </button>
+          </div>
+          <div class="form-text">Paste a product URL from an online store</div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="giftFetchingIndicator" class="alert alert-info d-none">
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Fetching product information...
+        </div>
+
+        <!-- Preview area (hidden until metadata is fetched) -->
+        <div id="giftProductPreview" class="d-none">
+          <!-- Product Image -->
+          <div class="mb-3 text-center" id="giftProductImageContainer" style="display: none;">
+            <img id="giftProductImage" src="" alt="Product" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
+          </div>
+
+          <!-- Product Name -->
+          <div class="mb-3">
+            <label class="form-label">Product Name <span class="text-danger">*</span></label>
+            <input type="text" id="giftProductName" class="form-control">
+            <div id="giftDuplicateWarning" class="alert alert-warning mt-2 d-none">
+              <i class="fa-solid fa-exclamation-triangle"></i> A product with this name already exists and will be used.
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea id="giftProductDescription" class="form-control" rows="3"></textarea>
+          </div>
+
+          <!-- Price -->
+          <div class="mb-3">
+            <label class="form-label">Price (Optional)</label>
+            <input type="text" id="giftProductPrice" class="form-control" placeholder="e.g., 999">
+          </div>
+
+          <!-- Store the metadata -->
+          <input type="hidden" id="giftProductImageUrl">
+          <input type="hidden" id="giftProductSourceUrl">
+          <input type="hidden" id="giftProductSourceTitle">
+          <input type="hidden" id="giftExistingProductId">
+          <input type="hidden" name="product_id" id="giftProductIdField">
+        </div>
+
+        <div class="gift-error-message d-none alert alert-danger"></div>
+      </div>
+
+      <!-- Tab 2: Manual product selection -->
+      <div class="tab-pane fade" id="paneGiftManual" role="tabpanel">
+        <div class="mb-3">
+          <label class="form-label">Product</label>
+          <select id="giftProduct" name="product_id" class="form-select"
+                  data-tomselect="product-single"
+                  data-selected-product-id="{{:(order && order.product_id) ? order.product_id : ''}}"
+                  data-selected-product-name="{{:(order && order.product_name) ? order.product_name : ''}}">
+          </select>
+          <input type="hidden" name="product_name" data-product-name value="">
+          <div class="form-text">Type to search or create a new product.</div>
+        </div>
+      </div>
     </div>
 
     <!-- Participants -->
